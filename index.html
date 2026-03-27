@@ -9,18 +9,29 @@
         body { background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         .card { border-radius: 12px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .record-card { border-left: 4px solid #6c757d; }
+        .recipe-row input { font-size: 0.9rem; padding: 0.25rem 0.5rem; }
     </style>
 </head>
 <body>
 <div class="container py-4 max-w-md">
     <h2 class="mb-4 text-center" style="color: #6c757d;">🧑‍🔬 T³ 減法實驗室</h2>
     
-    <div class="d-flex justify-content-end mb-3 gap-2">
-        <button class="btn btn-sm btn-outline-secondary" onclick="exportData()">匯出備份</button>
-        <label class="btn btn-sm btn-outline-secondary mb-0">
-            匯入資料 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
-        </label>
-    </div>
+    <datalist id="ingredient-list">
+        <option value="高筋麵粉"></option>
+        <option value="低筋麵粉"></option>
+        <option value="糖"></option>
+        <option value="全蛋"></option>
+        <option value="蛋黃"></option>
+        <option value="蛋白"></option>
+        <option value="可可粉"></option>
+    </datalist>
+
+    <datalist id="brand-list">
+        <option value="安佳"></option>
+        <option value="水手牌"></option>
+        <option value="三溫糖"></option>
+        <option value="上白糖"></option>
+    </datalist>
 
     <div class="card mb-4">
         <div class="card-body">
@@ -30,151 +41,14 @@
                     <label class="form-label text-muted small mb-1">品項名稱 (Iteration)</label>
                     <input type="text" class="form-control" id="recipe_name" placeholder="ex: V2.1 減糖香蕉磅蛋糕" required>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small mb-1">標準配方比例</label>
-                        <textarea class="form-control" id="target_recipe" rows="2" placeholder="原始配方..." required></textarea>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small mb-1">實際用量與品牌 (微調)</label>
-                        <textarea class="form-control" id="actual_recipe" rows="2" placeholder="ex: 水手牌低粉100g, 糖減至30g" required></textarea>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small mb-1">預設烤溫/時間</label>
-                        <input type="text" class="form-control" id="target_temp" placeholder="ex: 180°C / 40min" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small mb-1">實際烤溫/時間紀錄</label>
-                        <input type="text" class="form-control" id="actual_temp" placeholder="ex: 15分後上色過快，降至160°C" required>
-                    </div>
-                </div>
+
                 <div class="mb-3">
-                    <label class="form-label text-muted small mb-1">成品數量</label>
-                    <input type="text" class="form-control" id="yield_amount" placeholder="ex: 6吋 x 1" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label text-muted small mb-1">測試結果 (口感心得)</label>
-                    <textarea class="form-control" id="result_notes" rows="3" placeholder="記錄長輩/小孩接受度、保濕度..." required></textarea>
-                </div>
-                <button type="submit" class="btn btn-secondary w-100">儲存實驗紀錄</button>
-            </form>
-        </div>
-    </div>
-
-    <h5 class="mb-3 text-secondary">🗂️ 歷史實驗數據</h5>
-    <div id="recordsContainer" class="row">
-        </div>
-</div>
-
-<script>
-    // 請將這裡替換成你的 Google Apps Script 網頁應用程式網址
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwOBgZJq3tRZdm_wiNAVMkPG_3ZsB1pupgGRvws26i22A7rWkxqDGE-_zx-B3gYpveQ/exec';
-    
-    let records = [];
-
-    // 初始載入資料
-    async function loadData() {
-        const container = document.getElementById('recordsContainer');
-        container.innerHTML = '<div class="text-center w-100"><div class="spinner-border text-secondary" role="status"></div><p class="mt-2 text-muted">從雲端載入實驗數據中...</p></div>';
-        
-        try {
-            const response = await fetch(API_URL);
-            records = await response.json();
-            renderRecords();
-        } catch (error) {
-            container.innerHTML = '<p class="text-danger text-center w-100">載入失敗，請檢查網路連線或 API 網址。</p>';
-            console.error('Error:', error);
-        }
-    }
-
-    // 監聽表單送出
-    document.getElementById('bakingForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const submitBtn = this.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.innerText = '雲端儲存中...';
-        
-        const newRecord = {
-            id: Date.now().toString(), // 轉成字串存入 Sheets 較穩定
-            date: new Date().toLocaleString('zh-TW', { hour12: false }),
-            recipe_name: document.getElementById('recipe_name').value,
-            target_recipe: document.getElementById('target_recipe').value,
-            actual_recipe: document.getElementById('actual_recipe').value,
-            target_temp: document.getElementById('target_temp').value,
-            actual_temp: document.getElementById('actual_temp').value,
-            yield_amount: document.getElementById('yield_amount').value,
-            result_notes: document.getElementById('result_notes').value
-        };
-
-        try {
-            // 使用 text/plain 避免跨網域 (CORS) preflight 錯誤
-            await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify(newRecord),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            });
-            
-            // 寫入成功後，將新資料加入本地陣列並重新渲染
-            records.unshift(newRecord);
-            renderRecords();
-            this.reset();
-            alert('實驗紀錄已成功同步至 Google Sheets！');
-        } catch (error) {
-            alert('儲存失敗，請重試。');
-            console.error('Error:', error);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerText = '儲存實驗紀錄';
-        }
-    });
-
-    // 渲染紀錄到畫面上
-    function renderRecords() {
-        const container = document.getElementById('recordsContainer');
-        container.innerHTML = '';
-
-        if (records.length === 0) {
-            container.innerHTML = '<p class="text-muted text-center w-100">雲端資料庫目前是空的，開始第一次實驗吧！</p>';
-            return;
-        }
-
-        records.forEach(record => {
-            const card = document.createElement('div');
-            card.className = 'col-12 mb-3';
-            // 將換行符號轉為 <br> 以在 HTML 中正確顯示多行文字
-            const formatText = (text) => (text || '').toString().replace(/\n/g, '<br>');
-            
-            card.innerHTML = `
-                <div class="card record-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="card-title text-dark mb-0 fw-bold">${record.recipe_name}</h6>
-                        </div>
-                        <p class="text-muted small mb-2">${record.date}</p>
-                        <div class="bg-light p-2 rounded mb-2 small">
-                            <strong>預設配方：</strong><br>${formatText(record.target_recipe)}
-                        </div>
-                        <div class="bg-white border p-2 rounded mb-2 small">
-                            <strong>實際用量與品牌：</strong><br>${formatText(record.actual_recipe)}
-                        </div>
-                        <p class="mb-1 small"><strong>預設烤溫：</strong> ${record.target_temp}</p>
-                        <p class="mb-1 small"><strong>實際烤溫：</strong> <span class="text-primary">${record.actual_temp}</span></p>
-                        <p class="mb-2 small"><strong>數量：</strong> ${record.yield_amount}</p>
-                        <div class="alert alert-secondary mb-0 p-2 small">
-                            <strong>心得：</strong><br>${formatText(record.result_notes)}
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    // 網頁載入時自動抓取雲端資料
-    loadData();
-</script>
-</body>
-</html>
+                    <label class="form-label text-muted small mb-1 d-flex justify-content-between">
+                        <span>配方明細 (名稱 / 百分比 / 克數 / 品牌)</span>
+                    </label>
+                    <div id="recipe-container">
+                        <div class="row g-1 mb-2 recipe-row align-items-center">
+                            <div class="col-3">
+                                <input type="text" list="ingredient-list" class="form-control ing-name" placeholder="食材" required>
+                            </div>
+                            <div
