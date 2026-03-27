@@ -1,54 +1,1024 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>T³ 減法實驗室 - 烘焙紀錄</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        body { background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        .card { border-radius: 12px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .record-card { border-left: 4px solid #6c757d; }
-        .recipe-row input { font-size: 0.9rem; padding: 0.25rem 0.5rem; }
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .record-card {
+            border-left: 4px solid #6c757d;
+            background-color: #fff;
+        }
+
+        .recipe-row input {
+            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .autocomplete-list {
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: #e9ecef;
+            color: #495057;
+            box-shadow: none;
+        }
+
+        .accordion-button:focus {
+            box-shadow: none;
+            border-color: rgba(0, 0, 0, .125);
+        }
     </style>
 </head>
+
 <body>
-<div class="container py-4 max-w-md">
-    <h2 class="mb-4 text-center" style="color: #6c757d;">🧑‍🔬 T³ 減法實驗室</h2>
-    
-    <datalist id="ingredient-list">
-        <option value="高筋麵粉"></option>
-        <option value="低筋麵粉"></option>
-        <option value="糖"></option>
-        <option value="全蛋"></option>
-        <option value="蛋黃"></option>
-        <option value="蛋白"></option>
-        <option value="可可粉"></option>
-    </datalist>
+    <div class="container py-4 max-w-md">
+        <h2 class="mb-4 text-center" style="color: #6c757d;">🧑‍🔬 T³ 減法實驗室</h2>
 
-    <datalist id="brand-list">
-        <option value="安佳"></option>
-        <option value="水手牌"></option>
-        <option value="三溫糖"></option>
-        <option value="上白糖"></option>
-    </datalist>
+        <datalist id="ingredient-list">
+            <option value="高筋麵粉"></option>
+            <option value="低筋麵粉"></option>
+            <option value="糖"></option>
+            <option value="全蛋"></option>
+            <option value="蛋黃"></option>
+            <option value="蛋白"></option>
+            <option value="可可粉"></option>
+        </datalist>
+        <datalist id="brand-list">
+            <option value="安佳"></option>
+            <option value="水手牌"></option>
+            <option value="三溫糖"></option>
+            <option value="上白糖"></option>
+        </datalist>
+        <datalist id="purpose-list">
+            <option value="試做"></option>
+            <option value="減糖"></option>
+            <option value="減油"></option>
+        </datalist>
+        <datalist id="store-list">
+            <option value="艾佳"></option>
+            <option value="全聯"></option>
+            <option value="工研院合作社"></option>
+            <option value="市場"></option>
+        </datalist>
+        <h5 class="mb-3 text-secondary mt-3">🗂️ 實驗紀錄總覽庫</h5>
+        <div id="recordsContainer" class="accordion mb-4"></div>
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title mb-3">📝 新增測試參數</h5>
-            <form id="bakingForm">
-                <div class="mb-3">
-                    <label class="form-label text-muted small mb-1">品項名稱 (Iteration)</label>
-                    <input type="text" class="form-control" id="recipe_name" placeholder="ex: V2.1 減糖香蕉磅蛋糕" required>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">📝 搜尋或新增配方</h5>
+
+                <div class="mb-4 position-relative">
+                    <label class="form-label text-muted small mb-1">品項名稱 (輸入以模糊搜尋或建立新配方)</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="recipe_name" placeholder="請輸入配方名稱..."
+                            autocomplete="off">
+                        <button type="button" class="btn btn-outline-danger" onclick="clearAllRecipeFields()"
+                            title="清除所有配方欄位">🗑️ 清除</button>
+                    </div>
+                    <div id="autocomplete-results" class="list-group position-absolute w-100 autocomplete-list"
+                        style="display: none;"></div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label text-muted small mb-1 d-flex justify-content-between">
-                        <span>配方明細 (名稱 / 百分比 / 克數 / 品牌)</span>
-                    </label>
-                    <div id="recipe-container">
-                        <div class="row g-1 mb-2 recipe-row align-items-center">
-                            <div class="col-3">
-                                <input type="text" list="ingredient-list" class="form-control ing-name" placeholder="食材" required>
+                <div class="mb-3 p-3 bg-light rounded border">
+                    <div class="section-title mb-2">🍞 原始配方明細</div>
+                    <div class="row g-1 mb-1 text-center align-items-end">
+                        <div class="col-4 text-muted small pb-1">食材名稱</div>
+                        <div class="col-3"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcPctFromGrams('target-recipe-container')">🔄 g算%</button></div>
+                        <div class="col-4"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcGramsFromPct('target-recipe-container')">🔄 %算g</button></div>
+                        <div class="col-1"></div>
+                    </div>
+                    <div id="target-recipe-container"></div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3"
+                        onclick="addRecipeRow('target-recipe-container', false, true)">＋ 新增原始食材</button>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small mb-1">製作步驟</label>
+                        <textarea class="form-control" id="target_steps" rows="3"
+                            placeholder="1. 麵粉過篩...&#10;2. 烤箱預熱..."></textarea>
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-4">
+                            <label class="form-label text-muted small mb-1">預設上火</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="target_temp_up">
+                                <span class="input-group-text"><sup>o</sup>C</span>
                             </div>
-                            <div
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label text-muted small mb-1">預設下火</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="target_temp_down">
+                                <span class="input-group-text"><sup>o</sup>C</span>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label text-muted small mb-1">預設時間</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="target_time">
+                                <span class="input-group-text">分鐘</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-dark btn-sm w-100" onclick="saveOriginalRecipe()"
+                        id="btnSaveRecipe">💾 建立/更新原始配方至資料庫</button>
+                </div>
+
+                <div id="record-selection-area" class="mb-4 p-3 border rounded shadow-sm"
+                    style="display: none; background-color: #e9ecef;">
+                    <h6 class="text-primary mb-3">請選擇操作：</h6>
+                    <button class="btn btn-primary w-100 mb-3" onclick="startNewRecord()">➕ 新增一筆全新實驗數據</button>
+                    <h6 class="text-muted small mb-2">或選擇載入歷史實驗進行更新：</h6>
+                    <div id="historical-records-list" class="list-group"></div>
+                </div>
+
+                <form id="recordForm" style="display: none;">
+                    <div class="mb-4 p-3 rounded border" style="background-color: #fdfbf7;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="section-title mb-0">🧪 實驗紀錄 <span id="record-mode-badge"
+                                    class="badge bg-success">新實驗</span></div>
+                        </div>
+
+                        <div class="mb-3 p-2 bg-white rounded border">
+                            <label class="form-label text-muted small mb-1 fw-bold">🎯 實驗目的 <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" list="purpose-list" class="form-control" id="experiment_purpose"
+                                placeholder="請輸入或選擇實驗目的" required>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="text-muted small fw-bold">實驗配方明細</div>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2"
+                                style="font-size: 0.8rem;" onclick="copyOriginalToActual()">⬇️ 複製配方</button>
+                        </div>
+                        <div class="row g-1 mb-1 text-center align-items-end">
+                            <div class="col-3 text-muted small pb-1">食材名稱</div>
+                            <div class="col-2"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcPctFromGrams('actual-recipe-container')">🔄 g算%</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcGramsFromPct('actual-recipe-container')">🔄 %算g</button></div>
+                            <div class="col-3 text-muted small pb-1">品牌</div>
+                            <div class="col-1"></div>
+                        </div>
+                        <div id="actual-recipe-container"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3"
+                            onclick="addRecipeRow('actual-recipe-container', true, false)">＋ 新增實驗食材</button>
+
+                        <div class="row mb-2">
+                            <div class="col-4">
+                                <label class="form-label text-muted small mb-1">實際上火</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="actual_temp_up">
+                                    <span class="input-group-text"><sup>o</sup>C</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label text-muted small mb-1">實際下火</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="actual_temp_down">
+                                    <span class="input-group-text"><sup>o</sup>C</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label text-muted small mb-1">實際時間</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="actual_time">
+                                    <span class="input-group-text">分鐘</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">成品數量</label>
+                            <input type="text" class="form-control" id="yield_amount">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">測試結果 (口感心得)</label>
+                            <textarea class="form-control" id="result_notes" rows="3"></textarea>
+                        </div>
+                        <button type="button" class="btn btn-outline-warning w-100 mt-2"
+                            onclick="calculateCost(this)">💰 計算食材成本</button>
+                        <div id="costResult" class="mt-2" style="display:none;"></div>
+                        <button type="submit" class="btn btn-success w-100 mt-2" id="btnSaveRecord">儲存實驗紀錄</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <h5 class="mb-3 text-secondary">🛋️ 購買紀錄</h5>
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="card-title mb-3">➕ 新增購買紀錄</h6>
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label text-muted small mb-1">品項</label>
+                        <input type="text" list="ingredient-list" class="form-control" id="pur_ingredient"
+                            placeholder="選擇食材">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-muted small mb-1">品牌</label>
+                        <input type="text" list="brand-list" class="form-control" id="pur_brand" placeholder="選擇品牌">
+                    </div>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-4">
+                        <label class="form-label text-muted small mb-1">克數</label>
+                        <div class="input-group">
+                            <input type="number" step="1" class="form-control" id="pur_weight" placeholder="0">
+                            <span class="input-group-text">g</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label text-muted small mb-1">價錢</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="1" class="form-control" id="pur_price" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label text-muted small mb-1">購入方式</label>
+                        <input type="text" list="store-list" class="form-control" id="pur_store" placeholder="選擇通購處">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-dark btn-sm w-100 mt-1" onclick="savePurchase()"
+                    id="btnSavePurchase">💾 儲存購買紀錄</button>
+            </div>
+        </div>
+        <div id="purchaseContainer" class="mb-5"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxpi1tUsOCMfblkaQyL6F00r7EYjIL2w2cfap--nFiQx6Tyc2m-hUZnrJXi7kYe8-xc/exec';
+        let dbRecipes = [];
+        let dbRecords = [];
+        let dbPurchases = [];
+        let currentRecordId = null; // 用來追蹤目前是在「新增」還是「更新」
+        let currentCalculatedCostStr = ''; // 用來儲存按下「計算」後得到的成本
+
+        // 模糊搜尋邏輯
+        const searchInput = document.getElementById('recipe_name');
+        const autocompleteResults = document.getElementById('autocomplete-results');
+
+        // 顯示自動完成選單
+        function showAutocomplete(val) {
+            autocompleteResults.innerHTML = '';
+            const matches = val
+                ? dbRecipes.filter(r => r.recipe_name.toLowerCase().includes(val))
+                : dbRecipes; // 空字串時顯示全部
+
+            if (matches.length > 0) {
+                autocompleteResults.style.display = 'block';
+                matches.forEach(m => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'list-group-item list-group-item-action py-2 text-primary fw-bold';
+                    btn.innerText = m.recipe_name;
+                    btn.onclick = () => {
+                        searchInput.value = m.recipe_name;
+                        autocompleteResults.style.display = 'none';
+                        loadRecipeDetails(m.recipe_name);
+                    };
+                    autocompleteResults.appendChild(btn);
+                });
+            } else {
+                autocompleteResults.style.display = 'none';
+            }
+        }
+
+        // 點擊時顯示所有選項
+        searchInput.addEventListener('focus', function () {
+            showAutocomplete(this.value.trim().toLowerCase());
+        });
+
+        // 輸入時切換為搜尋模式
+        searchInput.addEventListener('input', function () {
+            showAutocomplete(this.value.trim().toLowerCase());
+        });
+
+        // 隱藏點擊外部的選單
+        document.addEventListener('click', function (e) {
+            if (e.target !== searchInput && e.target !== autocompleteResults) {
+                autocompleteResults.style.display = 'none';
+            }
+        });
+
+        // 新增配方列 (isRequired 用來區分原始配方和實驗配方是否必填)
+        function addRecipeRow(containerId, hasBrand, isRequired, name = '', pct = '', weight = '', brand = '') {
+            const container = document.getElementById(containerId);
+            const row = document.createElement('div');
+            row.className = 'row g-1 mb-2 recipe-row align-items-center';
+
+            let reqAttr = isRequired ? 'required' : '';
+            let brandHTML = hasBrand ? `<div class="col-3"><input type="text" list="brand-list" class="form-control ing-brand" placeholder="品牌" value="${brand}"></div>` : '';
+            let colSize = hasBrand ? { n: 3, p: 2, w: 3 } : { n: 4, p: 3, w: 4 };
+
+            row.innerHTML = `
+            <div class="col-${colSize.n}"><input type="text" list="ingredient-list" class="form-control ing-name" placeholder="食材" value="${name}" ${reqAttr}></div>
+            <div class="col-${colSize.p}"><input type="number" step="0.1" class="form-control ing-pct" placeholder="%" value="${pct}"></div>
+            <div class="col-${colSize.w}"><input type="number" step="0.1" class="form-control ing-weight" placeholder="克數" value="${weight}" ${reqAttr}></div>
+            ${brandHTML}
+            <div class="col-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger w-100 px-1" onclick="this.closest('.recipe-row').remove()">×</button></div>
+        `;
+            container.appendChild(row);
+        }
+
+        // 將配方表單轉成文字
+        function compileRecipe(containerId, hasBrand) {
+            const rows = document.querySelectorAll(`#${containerId} .recipe-row`);
+            let recipeString = '';
+            rows.forEach(row => {
+                const name = row.querySelector('.ing-name').value.trim();
+                const pct = row.querySelector('.ing-pct').value;
+                const weight = row.querySelector('.ing-weight').value;
+                let brand = hasBrand ? (row.querySelector('.ing-brand')?.value || '') : '';
+                if (name || weight) {
+                    let parts = [];
+                    if (name) parts.push(name);
+                    if (pct) parts.push(`${pct}%`);
+                    if (weight) parts.push(`${weight}g`);
+                    if (brand) parts.push(`(${brand})`);
+
+                    if (hasBrand) {
+                        const validPurchase = p =>
+                            p.ingredient && p.ingredient.trim() === name &&
+                            parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
+                        const purchase = brand
+                            ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
+                            : dbPurchases.find(p => validPurchase(p));
+                        if (purchase) {
+                            parts.push(`$${purchase.price}/${purchase.weight}g`);
+                        }
+                    }
+
+                    recipeString += parts.join(' | ') + '\n';
+                }
+            });
+            return recipeString.trim();
+        }
+
+        // 解析文字配方填入表單
+        function parseAndRenderRecipe(recipeString, containerId, hasBrand, isRequired) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            if (!recipeString) { addRecipeRow(containerId, hasBrand, isRequired); return; }
+
+            const lines = recipeString.split('\n');
+            lines.forEach(line => {
+                const parts = line.split(' | ');
+                let name = parts[0] || '';
+                let pct = '', weight = '', brand = '';
+
+                parts.forEach(p => {
+                    if (p.includes('%')) pct = p.replace('%', '');
+                    else if (p.includes('g') && !p.includes('$') && !p.includes('/')) weight = p.replace('g', '');
+                    else if (p.includes('(')) brand = p.replace(/[()]/g, '');
+                });
+                addRecipeRow(containerId, hasBrand, isRequired, name, pct, weight, brand);
+            });
+        }
+
+        // 設定實驗目的快捷鍵
+        function setPurpose(value) {
+            document.getElementById('experiment_purpose').value = value;
+        }
+
+        // 清除所有配方欄位
+        function clearAllRecipeFields() {
+            if (!confirm('確定要清除所有欄位嗎？這將清空品項名稱、食材、步驟及溫度/時間設定。')) return;
+            document.getElementById('recipe_name').value = '';
+            document.getElementById('target-recipe-container').innerHTML = '';
+            addRecipeRow('target-recipe-container', false, true);
+            document.getElementById('target_steps').value = '';
+            document.getElementById('target_temp_up').value = '';
+            document.getElementById('target_temp_down').value = '';
+            document.getElementById('target_time').value = '';
+            document.getElementById('record-selection-area').style.display = 'none';
+            document.getElementById('recordForm').style.display = 'none';
+            autocompleteResults.style.display = 'none';
+            currentCalculatedCostStr = '';
+            document.getElementById('costResult').style.display = 'none';
+        }
+
+        // 複製到實驗配方
+        function copyOriginalToActual() {
+            const targetStr = compileRecipe('target-recipe-container', false);
+            parseAndRenderRecipe(targetStr, 'actual-recipe-container', true, false);
+            document.getElementById('actual_temp_up').value = document.getElementById('target_temp_up').value;
+            document.getElementById('actual_temp_down').value = document.getElementById('target_temp_down').value;
+            document.getElementById('actual_time').value = document.getElementById('target_time').value;
+        }
+
+        // 用百分比去推算克數
+        function calcGramsFromPct(containerId) {
+            const rows = document.querySelectorAll(`#${containerId} .recipe-row`);
+            let totalPct = 0;
+            const pcts = [];
+
+            // 加總所有百分比
+            rows.forEach(row => {
+                const pctInput = parseFloat(row.querySelector('.ing-pct').value);
+                if (!isNaN(pctInput) && pctInput > 0) {
+                    totalPct += pctInput;
+                    pcts.push(pctInput);
+                } else {
+                    pcts.push(0);
+                }
+            });
+
+            if (totalPct === 0) return alert("請先在下方列表中填寫各項食材的烘焙百分比(%)");
+
+            const totalInput = prompt("請輸入「未加耗損」的預期總 g 數：");
+            if (!totalInput) return;
+            const totalUnwasted = parseFloat(totalInput);
+            if (isNaN(totalUnwasted) || totalUnwasted <= 0) return alert("請輸入有效的總克數");
+
+            const wasteInput = prompt("請選擇耗損比例：\n輸入 0 代表 0% (無耗損)\n輸入 5 代表 5%\n輸入 10 代表 10%", "0");
+            if (wasteInput === null || wasteInput.trim() === '') return;
+            const wasteNum = parseFloat(wasteInput);
+            if (isNaN(wasteNum) || wasteNum < 0) return alert("請輸入有效的耗損比例");
+
+            // 有加耗損的目標總重
+            const multiplier = 1 + (wasteNum / 100);
+            const totalTarget = totalUnwasted * multiplier;
+
+            // 公式：基數 = 目標總重 / 總烘焙百分比
+            const baseWeight = totalTarget / totalPct;
+
+            rows.forEach((row, i) => {
+                if (pcts[i] > 0) {
+                    // 公式：每項克數 = 食材百分比 * 基數，四捨五入到整數
+                    const finalWeight = Math.round(pcts[i] * baseWeight);
+                    row.querySelector('.ing-weight').value = finalWeight;
+                }
+            });
+        }
+
+        // 用克數推算百分比
+        function calcPctFromGrams(containerId) {
+            const rows = document.querySelectorAll(`#${containerId} .recipe-row`);
+            let firstWeight = '';
+            let hasWeight = false;
+
+            // 尋找已填寫的第一項重量當作預設提示
+            for (let row of rows) {
+                const w = parseFloat(row.querySelector('.ing-weight').value);
+                if (!isNaN(w) && w > 0) {
+                    if (!hasWeight) { firstWeight = w; hasWeight = true; }
+                }
+            }
+
+            if (!hasWeight) return alert("請先填寫列表中部分食材的克數(g)");
+
+            const baseInput = prompt("請輸入作為「100%基準」的總克數 (通常為所有主粉類的加總)：", firstWeight);
+            if (!baseInput) return;
+            const baseWeight = parseFloat(baseInput);
+            if (isNaN(baseWeight) || baseWeight <= 0) return alert("請輸入有效的基準克數");
+
+            rows.forEach(row => {
+                const w = parseFloat(row.querySelector('.ing-weight').value);
+                if (!isNaN(w) && w > 0) {
+                    const finalPct = (w / baseWeight) * 100;
+                    // 若有小數則保留一位數字
+                    row.querySelector('.ing-pct').value = Number.isInteger(finalPct) ? finalPct : finalPct.toFixed(1);
+                }
+            });
+        }
+
+
+        // 載入與初始化
+        async function loadData() {
+            const container = document.getElementById('recordsContainer');
+            container.innerHTML = '<div class="text-center w-100 p-4"><div class="spinner-border text-secondary"></div><p>載入雲端資料中...</p></div>';
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                dbRecipes = data.recipes || [];
+                dbRecords = data.records || [];
+                dbPurchases = data.purchases || [];
+
+                renderRecordsAccordion();
+                renderPurchases();
+                addRecipeRow('target-recipe-container', false, true);
+            } catch (error) {
+                container.innerHTML = '<p class="text-danger text-center">載入失敗</p>';
+            }
+        }
+
+        // 選擇配方後，帶入原始配方並顯示歷史紀錄選項
+        function loadRecipeDetails(recipeName) {
+            const recipe = dbRecipes.find(r => r.recipe_name === recipeName);
+            if (recipe) {
+                parseAndRenderRecipe(recipe.target_recipe, 'target-recipe-container', false, true);
+                document.getElementById('target_temp_up').value = recipe.target_temp_up || '';
+                document.getElementById('target_temp_down').value = recipe.target_temp_down || '';
+                document.getElementById('target_time').value = recipe.target_time || '';
+                document.getElementById('target_steps').value = recipe.target_steps || '';
+
+                // 找出歷史紀錄
+                const historyRecords = dbRecords.filter(r => r.recipe_name === recipeName);
+                const listContainer = document.getElementById('historical-records-list');
+                listContainer.innerHTML = '';
+
+                // 統一格式化日期顯示
+                const formatDateStr = (dateStr) => {
+                    if (!dateStr) return '';
+                    const d = new Date(dateStr);
+                    if (isNaN(d.getTime())) return dateStr;
+                    const pad = n => n.toString().padStart(2, '0');
+                    return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                };
+
+                if (historyRecords.length > 0) {
+                    historyRecords.forEach(r => {
+                        const btn = document.createElement('button');
+                        btn.className = 'list-group-item list-group-item-action py-2';
+                        btn.innerHTML = `<strong>🕒 ${formatDateStr(r.date)}</strong>${r.experiment_purpose ? ' &nbsp;<span class="badge bg-info text-dark">' + r.experiment_purpose + '</span>' : ''}`;
+                        btn.onclick = () => loadHistoricalRecord(r);
+                        listContainer.appendChild(btn);
+                    });
+                } else {
+                    listContainer.innerHTML = '<div class="text-muted small p-2">此配方目前尚無實驗紀錄。</div>';
+                }
+
+                document.getElementById('record-selection-area').style.display = 'block';
+                document.getElementById('recordForm').style.display = 'none';
+            }
+        }
+
+        // 開始新實驗
+        function startNewRecord() {
+            currentRecordId = null;
+            document.getElementById('recordForm').style.display = 'block';
+            document.getElementById('recordForm').reset();
+            document.getElementById('actual-recipe-container').innerHTML = '';
+            addRecipeRow('actual-recipe-container', true, false);
+
+            // 重置成本明細
+            currentCalculatedCostStr = '';
+            document.getElementById('costResult').style.display = 'none';
+            document.getElementById('costResult').innerHTML = '';
+
+            document.getElementById('record-mode-badge').innerText = '新實驗';
+            document.getElementById('record-mode-badge').className = 'badge bg-success';
+            document.getElementById('btnSaveRecord').innerText = '儲存全新實驗紀錄';
+        }
+
+        // 載入歷史紀錄進行更新
+        function loadHistoricalRecord(record) {
+            currentRecordId = record.id;
+            document.getElementById('recordForm').style.display = 'block';
+
+            parseAndRenderRecipe(record.actual_recipe, 'actual-recipe-container', true, false);
+            document.getElementById('actual_temp_up').value = record.actual_temp_up || '';
+            document.getElementById('actual_temp_down').value = record.actual_temp_down || '';
+            document.getElementById('actual_time').value = record.actual_time || '';
+            document.getElementById('experiment_purpose').value = record.experiment_purpose || '';
+            document.getElementById('yield_amount').value = record.yield_amount || '';
+            document.getElementById('result_notes').value = record.result_notes || '';
+
+            document.getElementById('record-mode-badge').innerText = '編輯模式';
+            document.getElementById('record-mode-badge').className = 'badge bg-warning text-dark';
+            document.getElementById('btnSaveRecord').innerText = '💾 更新覆蓋此筆紀錄';
+
+            // 處理並更新成本明細區塊
+            const resultDiv = document.getElementById('costResult');
+            if (record.total_cost && record.actual_recipe) {
+                let tableRows = '';
+                record.actual_recipe.split('\n').forEach(line => {
+                    if (!line.trim()) return;
+                    const parts = line.split(' | ');
+                    let name = parts[0] ? parts[0].replace('*', '').trim() : '';
+                    let weight = '';
+                    let priceTag = '';
+                    let brand = '';
+                    
+                    parts.forEach(p => {
+                        if (p.includes('g') && !p.includes('$') && !p.includes('/')) weight = p.replace('g', '');
+                        if (p.includes('(')) brand = p.replace(/[()]/g, '');
+                        if (p.includes('$') || p.includes('/')) priceTag = p;
+                    });
+                    
+                    const label = brand ? `${name} (${brand})` : name;
+                    
+                    if (name && weight) {
+                        tableRows += `
+                            <tr>
+                                <td>${label}</td>
+                                <td class="text-end">${weight}g</td>
+                                <td class="text-end text-muted small">${priceTag || '—'}</td>
+                            </tr>`;
+                    }
+                });
+
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <div class="p-2 border rounded bg-white mt-3" style="background-color: #fdfdfd;">
+                        <div class="section-title mb-2 text-muted">💰 當時紀錄之食材成本明細 (防呆檢視)</div>
+                        <table class="table table-sm mb-2" style="font-size:0.85rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>食材</th>
+                                    <th class="text-end">用量</th>
+                                    <th class="text-end">單價參考</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                        <div class="d-flex justify-content-between align-items-center pt-1 border-top">
+                            <span class="fw-bold text-muted">當時紀錄之總成本</span>
+                            <span class="fw-bold text-success fs-6">$${record.total_cost}</span>
+                        </div>
+                    </div>`;
+                currentCalculatedCostStr = record.total_cost; // 保留讓未來直接存檔時這數字不會憑空消失
+            } else {
+                resultDiv.style.display = 'none';
+                resultDiv.innerHTML = '';
+                currentCalculatedCostStr = '';
+            }
+        }
+
+        // 儲存原始配方 (Recipes)
+        async function saveOriginalRecipe() {
+            const name = document.getElementById('recipe_name').value.trim();
+            if (!name) return alert('請填寫品項名稱');
+
+            const btn = document.getElementById('btnSaveRecipe');
+            btn.disabled = true; btn.innerText = '儲存中...';
+
+            const payload = {
+                action: 'save_recipe',
+                recipe_name: name,
+                target_recipe: compileRecipe('target-recipe-container', false),
+                target_temp_up: document.getElementById('target_temp_up').value,
+                target_temp_down: document.getElementById('target_temp_down').value,
+                target_time: document.getElementById('target_time').value,
+                target_steps: document.getElementById('target_steps').value // 新增製作步驟
+            };
+
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+
+            const existingIndex = dbRecipes.findIndex(r => r.recipe_name === name);
+            if (existingIndex > -1) { dbRecipes[existingIndex] = payload; }
+            else { dbRecipes.unshift(payload); }
+
+            alert('原始配方已更新！');
+            btn.disabled = false; btn.innerText = '💾 建立/更新原始配方至資料庫';
+
+            // 如果是新配方，儲存後顯示實驗選擇區
+            loadRecipeDetails(name);
+        }
+
+        // 儲存/更新實驗紀錄 (Records)
+        document.getElementById('recordForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const name = document.getElementById('recipe_name').value.trim();
+            if (!name) return alert('請先確認上方品項名稱');
+
+            const btn = document.getElementById('btnSaveRecord');
+            btn.disabled = true; btn.innerText = '雲端寫入中...';
+
+            const payload = {
+                action: currentRecordId ? 'update_record' : 'save_record',
+                id: currentRecordId || Date.now().toString(),
+                date: currentRecordId ? undefined : new Date().toLocaleString('zh-TW', { hour12: false }), // 更新時不覆蓋原時間
+                recipe_name: name,
+                actual_recipe: compileRecipe('actual-recipe-container', true),
+                actual_temp_up: document.getElementById('actual_temp_up').value,
+                actual_temp_down: document.getElementById('actual_temp_down').value,
+                actual_time: document.getElementById('actual_time').value,
+                experiment_purpose: document.getElementById('experiment_purpose').value,
+                yield_amount: document.getElementById('yield_amount').value,
+                result_notes: document.getElementById('result_notes').value,
+                total_cost: currentCalculatedCostStr
+            };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (result.status !== 'success') {
+                    alert('⚠️ 儲存失敗：' + (result.message || '未知錯誤'));
+                    btn.disabled = false;
+                    return;
+                }
+            } catch (err) {
+                alert('⚠️ 網路錯誤：' + err.message);
+                btn.disabled = false;
+                return;
+            }
+
+            if (currentRecordId) {
+                const index = dbRecords.findIndex(r => r.id == currentRecordId);
+                if (index > -1) {
+                    payload.date = dbRecords[index].date;
+                    dbRecords[index] = payload;
+                }
+                alert('歷史紀錄已成功更新覆蓋！');
+            } else {
+                dbRecords.unshift(payload);
+                alert('新實驗紀錄已儲存！');
+            }
+
+            renderRecordsAccordion();
+            loadRecipeDetails(name);
+            document.getElementById('recordForm').style.display = 'none';
+
+            btn.disabled = false;
+        });
+
+        // 從配方字串計算成本（總覽庫用） -> 已移除，改由儲存時計算
+
+        // 總覽庫點擊紀錄卡片，啟動編輯
+        function openRecordFromAccordion(recordId) {
+            const r = dbRecords.find(x => String(x.id) === String(recordId));
+            if (!r) return;
+
+            // 1. 填入品項名稱並載入原配方設定
+            document.getElementById('recipe_name').value = r.recipe_name;
+            loadRecipeDetails(r.recipe_name);
+
+            // 2. 將此紀錄載入表單供編輯
+            loadHistoricalRecord(r);
+
+            // 3. 畫面上捲到表單方便編輯
+            setTimeout(() => {
+                const formElement = document.getElementById('recordForm');
+                if (formElement) {
+                    const y = formElement.getBoundingClientRect().top + window.scrollY - 20; // 稍微預留頂部空間
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+            }, 100);
+        }
+
+        // 渲染手風琴紀錄 (加入製作步驟顯示)
+        function renderRecordsAccordion() {
+            const container = document.getElementById('recordsContainer');
+            container.innerHTML = '';
+
+            // 統一格式化日期顯示（給總覽庫用）
+            const formatDateStr = (dateStr) => {
+                if (!dateStr) return '';
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return dateStr;
+                const pad = n => n.toString().padStart(2, '0');
+                return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            };
+
+            const grouped = dbRecords.reduce((acc, curr) => {
+                if (!acc[curr.recipe_name]) acc[curr.recipe_name] = [];
+                acc[curr.recipe_name].push(curr);
+                return acc;
+            }, {});
+
+            Object.keys(grouped).forEach((recipeName, index) => {
+                const records = grouped[recipeName];
+                const accId = `collapse-${index}`;
+                const formatText = (text) => (text || '').toString().replace(/\n/g, '<br>');
+
+                // 找出這組紀錄對應的原始配方，以便顯示步驟
+                const recipeData = dbRecipes.find(r => r.recipe_name === recipeName);
+                let stepsHTML = '';
+                if (recipeData && recipeData.target_steps) {
+                    stepsHTML = `<div class="mb-3 p-2 bg-white rounded border small text-muted"><strong>📖 製作步驟：</strong><br>${formatText(recipeData.target_steps)}</div>`;
+                }
+
+                let recordsHTML = records.map(r => {
+                    return `
+                    <div class="record-card p-3 mb-3 border rounded shadow-sm position-relative" style="cursor: pointer;" onclick="openRecordFromAccordion('${r.id}')" title="點擊載入此紀錄">
+                        <span class="position-absolute top-0 end-0 p-2 text-primary small mt-1 me-1"><i class="fw-bold">✏️ 編輯</i></span>
+                        <p class="text-secondary fw-bold small mb-2">🕒 紀錄時間: ${formatDateStr(r.date)}</p>
+                        ${r.experiment_purpose ? '<p class="mb-2 small"><strong>🎯 目的：</strong> <span class="badge bg-info text-dark">' + r.experiment_purpose + '</span></p>' : ''}
+                        <div class="bg-light p-2 rounded mb-2 small" style="font-family: monospace;"><strong>🧪 實驗配方：</strong><br>${formatText(r.actual_recipe)}</div>
+                        <div class="row mb-2 small">
+                            <div class="col-4"><strong>上火:</strong> <span class="text-danger">${r.actual_temp_up ? r.actual_temp_up + '<sup>o</sup>C' : '-'}</span></div>
+                            <div class="col-4"><strong>下火:</strong> <span class="text-danger">${r.actual_temp_down ? r.actual_temp_down + '<sup>o</sup>C' : '-'}</span></div>
+                            <div class="col-4"><strong>時間:</strong> ${r.actual_time ? r.actual_time + ' 分鐘' : '-'}</div>
+                        </div>
+                        <p class="mb-2 small"><strong>數量：</strong> ${r.yield_amount || '-'}</p>
+                        <div class="alert alert-secondary mb-0 p-2 small"><strong>心得：</strong><br>${formatText(r.result_notes)}</div>
+                        ${r.total_cost ? '<div class="d-flex justify-content-between align-items-center mt-2 p-2 border rounded bg-white small"><span class="fw-bold">💰 總成本</span><span class="fw-bold text-success fs-6">$' + r.total_cost + '</span></div>' : ''}
+                    </div>`;
+                }).join('');
+
+                const item = document.createElement('div');
+                item.className = 'accordion-item border-0 mb-2 shadow-sm rounded';
+                item.innerHTML = `
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed rounded fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#${accId}">
+                        📁 ${recipeName} <span class="badge bg-secondary ms-2">${records.length} 筆實驗</span>
+                    </button>
+                </h2>
+                <div id="${accId}" class="accordion-collapse collapse" data-bs-parent="#recordsContainer">
+                    <div class="accordion-body bg-light">
+                        ${stepsHTML}
+                        ${recordsHTML}
+                    </div>
+                </div>
+            `;
+                container.appendChild(item);
+            });
+        }
+
+        loadData();
+
+        // 計算食材成本
+        async function calculateCost(btn) {
+            const resultDiv = document.getElementById('costResult');
+            const rows = document.querySelectorAll('#actual-recipe-container .recipe-row');
+
+            if (!rows.length) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<div class="alert alert-warning p-2 small">請先填寫實驗配方食材。</div>';
+                return;
+            }
+
+            // 先顯示連線中狀態
+            const originalText = btn.innerText;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 取得最新資料中...';
+            btn.disabled = true;
+
+            try {
+                // 去撈最新的資料庫
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                dbPurchases = data.purchases || [];
+            } catch (err) {
+                alert('無法取得最新購買紀錄：' + err.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
+            let tableRows = '';
+            let totalCost = 0;
+            let hasWarning = false;
+
+            rows.forEach(row => {
+                const name = row.querySelector('.ing-name')?.value?.trim();
+                const weight = parseFloat(row.querySelector('.ing-weight')?.value);
+                const brand = row.querySelector('.ing-brand')?.value?.trim();
+                if (!name || !weight) return;
+
+                const validPurchase = p =>
+                    p.ingredient && p.ingredient.trim() === name &&
+                    parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
+
+                // 有品牌則優先配對食材+品牌，無品牌則取最新一筆
+                const purchase = brand
+                    ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
+                    : dbPurchases.find(p => validPurchase(p));
+
+                const label = brand ? `${name} (${brand})` : name;
+
+                if (purchase) {
+                    const unitPrice = parseFloat(purchase.price) / parseFloat(purchase.weight);
+                    const cost = weight * unitPrice;
+                    totalCost += cost;
+                    tableRows += `
+                        <tr>
+                            <td>${label}</td>
+                            <td class="text-end">${weight}g</td>
+                            <td class="text-end text-muted small">$${purchase.price}/${purchase.weight}g</td>
+                            <td class="text-end fw-bold text-success">$${cost.toFixed(1)}</td>
+                        </tr>`;
+                } else {
+                    hasWarning = true;
+                    tableRows += `
+                        <tr class="table-warning">
+                            <td>${label}</td>
+                            <td class="text-end">${weight}g</td>
+                            <td class="text-end text-muted small">—</td>
+                            <td class="text-end text-muted">查無紀錄</td>
+                        </tr>`;
+                }
+            });
+
+            if (!tableRows) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<div class="alert alert-warning p-2 small">請填寫食材名稱及克數。</div>';
+                return;
+            }
+
+            // 儲存計算結果，供儲存實驗紀錄時寫入 payload
+            currentCalculatedCostStr = totalCost.toFixed(1);
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="p-2 border rounded bg-white">
+                    <div class="section-title mb-2">💰 食材成本明細</div>
+                    <table class="table table-sm mb-2" style="font-size:0.85rem;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>食材</th>
+                                <th class="text-end">用量</th>
+                                <th class="text-end">單價參考</th>
+                                <th class="text-end">成本</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                    <div class="d-flex justify-content-between align-items-center pt-1 border-top">
+                        <span class="fw-bold">總食材成本</span>
+                        <span class="fw-bold text-success fs-6">$${totalCost.toFixed(1)}</span>
+                    </div>
+                    ${hasWarning ? '<div class="text-muted small mt-1">⚠️ 黃底列代表購買記錄中查無此食材，請先新增購買記錄。</div>' : ''}
+                </div>`;
+        }
+
+        // 儲存購買紀錄
+        async function savePurchase() {
+            const ingredient = document.getElementById('pur_ingredient').value.trim();
+            if (!ingredient) return alert('請填寫品項名稱');
+            const btn = document.getElementById('btnSavePurchase');
+            btn.disabled = true; btn.innerText = '儲存中...';
+
+            const payload = {
+                action: 'save_purchase',
+                id: Date.now().toString(),
+                date: new Date().toLocaleString('zh-TW', { hour12: false }),
+                ingredient,
+                weight: document.getElementById('pur_weight').value,
+                price: document.getElementById('pur_price').value,
+                brand: document.getElementById('pur_brand').value,
+                store: document.getElementById('pur_store').value
+            };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (result.status !== 'success') {
+                    alert('⚠️ 儲存失敗：' + (result.message || '未知錯誤'));
+                    btn.disabled = false; btn.innerText = '💾 儲存購買紀錄';
+                    return;
+                }
+                dbPurchases.unshift(payload);
+                renderPurchases();
+                // 清空表單
+                ['pur_ingredient', 'pur_weight', 'pur_price', 'pur_brand', 'pur_store'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+            } catch (err) {
+                alert('⚠️ 網路錯誤：' + err.message);
+            }
+            btn.disabled = false; btn.innerText = '💾 儲存購買紀錄';
+        }
+
+        // 渲染購買紀錄列表
+        function renderPurchases() {
+            const container = document.getElementById('purchaseContainer');
+            if (!dbPurchases.length) {
+                container.innerHTML = '<p class="text-muted small text-center">尚無購買紀錄</p>';
+                return;
+            }
+            container.innerHTML = dbPurchases.map(p => `
+                <div class="card mb-2 border-0 shadow-sm">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">${p.ingredient}</span>
+                                ${p.brand ? '<span class="text-muted small ms-1">(' + p.brand + ')</span>' : ''}
+                            </div>
+                            <div class="text-end small">
+                                ${p.price ? '<span class="text-success fw-bold">$' + p.price + '</span>' : ''}
+                                ${p.weight ? '<span class="text-muted ms-2">' + p.weight + 'g</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="small text-muted mt-1">
+                            ${p.store ? '<span class="badge bg-secondary me-1">' + p.store + '</span>' : ''}
+                            <span>${p.date}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+
+</html>
