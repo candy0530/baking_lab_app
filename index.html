@@ -52,44 +52,130 @@
             box-shadow: none;
             border-color: rgba(0, 0, 0, .125);
         }
+
+        /* 登入畫面樣式 */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        #login-overlay .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            width: 90%;
+            max-width: 360px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        #login-overlay .login-card h3 {
+            color: #495057;
+            margin-bottom: 0.25rem;
+        }
+
+        #login-overlay .login-card .subtitle {
+            color: #adb5bd;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        #login-overlay .login-card .form-control {
+            border-radius: 8px;
+        }
+
+        #login-overlay .login-card .btn-login {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            padding: 0.6rem;
+        }
+
+        #login-overlay .login-card .btn-login:hover {
+            opacity: 0.9;
+        }
+
+        #login-error {
+            display: none;
+            color: #dc3545;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        body:not(.logged-in) .auth-only {
+            display: none !important;
+        }
+
+        body:not(.logged-in) #admin-recipe-section input,
+        body:not(.logged-in) #admin-recipe-section textarea {
+            pointer-events: none;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+        }
+
+        body:not(.logged-in) #recipe_name {
+            pointer-events: auto !important;
+            background-color: #fff !important;
+        }
     </style>
 </head>
 
 <body>
-    <div class="container py-4 max-w-md">
-        <h2 class="mb-4 text-center" style="color: #6c757d;">🧑‍🔬 T³ 減法實驗室</h2>
+    <!-- 登入畫面遮罩 -->
+    <div id="login-overlay" style="display: none;">
+        <div class="login-card position-relative">
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-3"
+                onclick="hideLoginModal()"></button>
+            <h3>🧑‍🔬 T³ 減法實驗室</h3>
+            <div class="subtitle">烘焙紀錄管理系統</div>
+            <div class="mb-3 text-start">
+                <label class="form-label text-muted small mb-1">帳號</label>
+                <input type="text" class="form-control" id="login-username" placeholder="請輸入帳號" autocomplete="username">
+            </div>
+            <div class="mb-3 text-start">
+                <label class="form-label text-muted small mb-1">密碼</label>
+                <input type="password" class="form-control" id="login-password" placeholder="請輸入密碼"
+                    autocomplete="current-password">
+            </div>
+            <button class="btn btn-login w-100" id="btn-login" onclick="handleLogin()">🔓 登入</button>
+            <div id="login-error"></div>
+        </div>
+    </div>
 
-        <datalist id="ingredient-list">
-            <option value="高筋麵粉"></option>
-            <option value="低筋麵粉"></option>
-            <option value="糖"></option>
-            <option value="全蛋"></option>
-            <option value="蛋黃"></option>
-            <option value="蛋白"></option>
-            <option value="可可粉"></option>
-        </datalist>
-        <datalist id="brand-list">
-            <option value="安佳"></option>
-            <option value="水手牌"></option>
-            <option value="三溫糖"></option>
-            <option value="上白糖"></option>
-        </datalist>
+    <div class="container py-4 max-w-md" id="main-app" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0" style="color: #6c757d;">🧑‍🔬 T³ 減法實驗室</h2>
+            <div>
+                <button class="btn btn-sm btn-outline-primary" id="btn-show-login" onclick="showLoginModal()">🔑
+                    登入</button>
+                <button class="btn btn-sm btn-outline-secondary" id="btn-logout" onclick="handleLogout()"
+                    style="display: none;" title="登出">🚪 登出</button>
+            </div>
+        </div>
+
+        <datalist id="ingredient-list"></datalist>
+        <datalist id="brand-list"></datalist>
         <datalist id="purpose-list">
             <option value="試做"></option>
             <option value="減糖"></option>
             <option value="減油"></option>
         </datalist>
-        <datalist id="store-list">
-            <option value="艾佳"></option>
-            <option value="全聯"></option>
-            <option value="工研院合作社"></option>
-            <option value="市場"></option>
-        </datalist>
+        <datalist id="store-list"></datalist>
         <h5 class="mb-3 text-secondary mt-3">🗂️ 實驗紀錄總覽庫</h5>
         <div id="recordsContainer" class="accordion mb-4"></div>
 
 
-        <div class="card mb-4">
+        <div class="card mb-4" id="admin-recipe-section">
             <div class="card-body">
                 <h5 class="card-title mb-3">📝 搜尋或新增配方</h5>
 
@@ -107,19 +193,9 @@
 
                 <div class="mb-3 p-3 bg-light rounded border">
                     <div class="section-title mb-2">🍞 原始配方明細</div>
-                    <div class="row g-1 mb-1 text-center align-items-end">
-                        <div class="col-4 text-muted small pb-1">食材名稱</div>
-                        <div class="col-3"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0"
-                                style="font-size: 0.75rem;" onclick="calcPctFromGrams('target-recipe-container')">🔄
-                                g算%</button></div>
-                        <div class="col-4"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0"
-                                style="font-size: 0.75rem;" onclick="calcGramsFromPct('target-recipe-container')">🔄
-                                %算g</button></div>
-                        <div class="col-1"></div>
-                    </div>
                     <div id="target-recipe-container"></div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3"
-                        onclick="addRecipeRow('target-recipe-container', false, true)">＋ 新增原始食材</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3 fw-bold auth-only"
+                        onclick="addRecipeSection('target-recipe-container', false, true, '新區塊')">➕ 新增配方區塊</button>
 
                     <div class="mb-3">
                         <label class="form-label text-muted small mb-1">製作步驟</label>
@@ -150,19 +226,19 @@
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-dark btn-sm w-100" onclick="saveOriginalRecipe()"
+                    <button type="button" class="btn btn-dark btn-sm w-100 auth-only" onclick="saveOriginalRecipe()"
                         id="btnSaveRecipe">💾 建立/更新原始配方至資料庫</button>
                 </div>
 
-                <div id="record-selection-area" class="mb-4 p-3 border rounded shadow-sm"
+                <div id="record-selection-area" class="mb-4 p-3 border rounded shadow-sm auth-only"
                     style="display: none; background-color: #e9ecef;">
-                    <h6 class="text-primary mb-3">請選擇操作：</h6>
-                    <button class="btn btn-primary w-100 mb-3" onclick="startNewRecord()">➕ 新增一筆全新實驗數據</button>
-                    <h6 class="text-muted small mb-2">或選擇載入歷史實驗進行更新：</h6>
+                    <button class="btn btn-primary w-100 mb-3 auth-only" onclick="startNewRecord()">➕
+                        新增一筆全新實驗數據</button>
+                    <h6 class="text-muted small mb-2">歷史實驗紀錄：</h6>
                     <div id="historical-records-list" class="list-group"></div>
                 </div>
 
-                <form id="recordForm" style="display: none;">
+                <form id="recordForm" class="auth-only" style="display: none;">
                     <div class="mb-4 p-3 rounded border" style="background-color: #fdfbf7;">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="section-title mb-0">🧪 實驗紀錄 <span id="record-mode-badge"
@@ -181,20 +257,9 @@
                             <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2"
                                 style="font-size: 0.8rem;" onclick="copyOriginalToActual()">⬇️ 複製配方</button>
                         </div>
-                        <div class="row g-1 mb-1 text-center align-items-end">
-                            <div class="col-3 text-muted small pb-1">食材名稱</div>
-                            <div class="col-2"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0"
-                                    style="font-size: 0.75rem;" onclick="calcPctFromGrams('actual-recipe-container')">🔄
-                                    g算%</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0"
-                                    style="font-size: 0.75rem;" onclick="calcGramsFromPct('actual-recipe-container')">🔄
-                                    %算g</button></div>
-                            <div class="col-3 text-muted small pb-1">品牌</div>
-                            <div class="col-1"></div>
-                        </div>
                         <div id="actual-recipe-container"></div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3"
-                            onclick="addRecipeRow('actual-recipe-container', true, false)">＋ 新增實驗食材</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3 fw-bold"
+                            onclick="addRecipeSection('actual-recipe-container', true, false, '新區塊')">➕ 新增配方區塊</button>
 
                         <div class="row mb-2">
                             <div class="col-4">
@@ -220,64 +285,78 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label text-muted small mb-1">成品數量</label>
-                            <input type="text" class="form-control" id="yield_amount">
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <label class="form-label text-muted small mb-1">烤箱規格</label>
+                                <select class="form-select form-select-sm" id="oven_spec">
+                                    <option value="">選擇...</option>
+                                    <option value="Panasonic 38L">Panasonic 38L</option>
+                                    <option value="中部電機">中部電機</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label text-muted small mb-1">成品數量</label>
+                                <input type="text" class="form-control form-control-sm" id="yield_amount">
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted small mb-1">測試結果 (口感心得)</label>
                             <textarea class="form-control" id="result_notes" rows="3"></textarea>
                         </div>
-                        <button type="button" class="btn btn-outline-warning w-100 mt-2"
+                        <button type="button" class="btn btn-outline-warning w-100 mt-2 auth-only"
                             onclick="calculateCost(this)">💰 計算食材成本</button>
                         <div id="costResult" class="mt-2" style="display:none;"></div>
-                        <button type="submit" class="btn btn-success w-100 mt-2" id="btnSaveRecord">儲存實驗紀錄</button>
+                        <button type="submit" class="btn btn-success w-100 mt-2 auth-only"
+                            id="btnSaveRecord">儲存實驗紀錄</button>
                     </div>
                 </form>
             </div>
         </div>
 
 
-        <h5 class="mb-3 text-secondary">🛋️ 購買紀錄</h5>
-        <div class="card mb-3">
-            <div class="card-body">
-                <h6 class="card-title mb-3">➕ 新增購買紀錄</h6>
-                <div class="row g-2 mb-2">
-                    <div class="col-6">
-                        <label class="form-label text-muted small mb-1">品項</label>
-                        <input type="text" list="ingredient-list" class="form-control" id="pur_ingredient"
-                            placeholder="選擇食材">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label text-muted small mb-1">品牌</label>
-                        <input type="text" list="brand-list" class="form-control" id="pur_brand" placeholder="選擇品牌">
-                    </div>
-                </div>
-                <div class="row g-2 mb-2">
-                    <div class="col-4">
-                        <label class="form-label text-muted small mb-1">克數</label>
-                        <div class="input-group">
-                            <input type="number" step="1" class="form-control" id="pur_weight" placeholder="0">
-                            <span class="input-group-text">g</span>
+        <div id="admin-purchase-section" class="auth-only" style="display: none;">
+            <h5 class="mb-3 text-secondary">🛋️ 購買紀錄</h5>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="card-title mb-3">➕ 新增購買紀錄</h6>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label text-muted small mb-1">品項</label>
+                            <input type="text" list="ingredient-list" class="form-control" id="pur_ingredient"
+                                placeholder="選擇食材">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted small mb-1">品牌</label>
+                            <input type="text" list="brand-list" class="form-control" id="pur_brand" placeholder="選擇品牌">
                         </div>
                     </div>
-                    <div class="col-4">
-                        <label class="form-label text-muted small mb-1">價錢</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" step="1" class="form-control" id="pur_price" placeholder="0">
+                    <div class="row g-2 mb-2">
+                        <div class="col-4">
+                            <label class="form-label text-muted small mb-1">克數</label>
+                            <div class="input-group">
+                                <input type="number" step="1" class="form-control" id="pur_weight" placeholder="0">
+                                <span class="input-group-text">g</span>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label text-muted small mb-1">價錢</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="1" class="form-control" id="pur_price" placeholder="0">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label text-muted small mb-1">購入方式</label>
+                            <input type="text" list="store-list" class="form-control" id="pur_store"
+                                placeholder="選擇通購處">
                         </div>
                     </div>
-                    <div class="col-4">
-                        <label class="form-label text-muted small mb-1">購入方式</label>
-                        <input type="text" list="store-list" class="form-control" id="pur_store" placeholder="選擇通購處">
-                    </div>
+                    <button type="button" class="btn btn-dark btn-sm w-100 mt-1" onclick="savePurchase()"
+                        id="btnSavePurchase">💾 儲存購買紀錄</button>
                 </div>
-                <button type="button" class="btn btn-dark btn-sm w-100 mt-1" onclick="savePurchase()"
-                    id="btnSavePurchase">💾 儲存購買紀錄</button>
             </div>
+            <div id="purchaseContainer" class="mb-5"></div>
         </div>
-        <div id="purchaseContainer" class="mb-5"></div>
     </div>
 
     <script>
@@ -285,8 +364,99 @@
         let dbRecipes = [];
         let dbRecords = [];
         let dbPurchases = [];
-        let currentRecordId = null; // 用來追蹤目前是在「新增」還是「更新」
-        let currentCalculatedCostStr = ''; // 用來儲存按下「計算」後得到的成本
+        let dbOptions = [];
+        let currentRecordId = null;
+        let currentCalculatedCostStr = '';
+
+        // ====== 登入機制 ======
+        function updateUIForLoginState() {
+            const isLoggedIn = sessionStorage.getItem('baking_lab_auth') === 'true';
+            if (isLoggedIn) {
+                document.body.classList.add('logged-in');
+            } else {
+                document.body.classList.remove('logged-in');
+            }
+            document.getElementById('btn-show-login').style.display = isLoggedIn ? 'none' : 'inline-block';
+            document.getElementById('btn-logout').style.display = isLoggedIn ? 'inline-block' : 'none';
+
+            const adminPurchase = document.getElementById('admin-purchase-section');
+            if (adminPurchase) adminPurchase.style.display = isLoggedIn ? 'block' : 'none';
+
+            if (dbRecords.length > 0) renderRecordsAccordion();
+        }
+
+        function showLoginModal() {
+            document.getElementById('login-overlay').style.display = 'flex';
+        }
+
+        function hideLoginModal() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('login-error').style.display = 'none';
+        }
+
+        // Initialize App
+        (function initApp() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            updateUIForLoginState();
+            loadData();
+        })();
+
+        // Enter 鍵登入
+        document.getElementById('login-password').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') handleLogin();
+        });
+        document.getElementById('login-username').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') document.getElementById('login-password').focus();
+        });
+
+        async function handleLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errDiv = document.getElementById('login-error');
+            const btn = document.getElementById('btn-login');
+
+            if (!username || !password) {
+                errDiv.style.display = 'block';
+                errDiv.textContent = '請輸入帳號和密碼';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '驗證中...';
+            errDiv.style.display = 'none';
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login', username: username, password: password })
+                });
+                const result = await res.json();
+
+                if (result.status === 'success' && result.message === 'login_ok') {
+                    sessionStorage.setItem('baking_lab_auth', 'true');
+                    hideLoginModal();
+                    updateUIForLoginState();
+                } else {
+                    errDiv.style.display = 'block';
+                    errDiv.textContent = result.message || '登入失敗';
+                }
+            } catch (err) {
+                errDiv.style.display = 'block';
+                errDiv.textContent = '網路錯誤，請稍後再試';
+            }
+
+            btn.disabled = false;
+            btn.textContent = '🔓 登入';
+        }
+
+        function handleLogout() {
+            if (!confirm('確定要登出嗎？')) return;
+            sessionStorage.removeItem('baking_lab_auth');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            updateUIForLoginState();
+        }
 
         // 模糊搜尋邏輯
         const searchInput = document.getElementById('recipe_name');
@@ -335,9 +505,36 @@
             }
         });
 
-        // 新增配方列 (isRequired 用來區分原始配方和實驗配方是否必填)
-        function addRecipeRow(containerId, hasBrand, isRequired, name = '', pct = '', weight = '', brand = '') {
+        // 新增配方區塊
+        function addRecipeSection(containerId, hasBrand, isRequired, title = '主麵團') {
             const container = document.getElementById(containerId);
+            const sectionId = 'sec-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+            const sec = document.createElement('div');
+            sec.className = 'recipe-section mb-3 border border-2 border-light bg-white rounded p-2 shadow-sm';
+            sec.id = sectionId;
+
+            sec.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <input type="text" class="form-control form-control-sm section-title-input w-50 fw-bold text-primary" placeholder="區塊名稱 (例如: 主麵團, 內餡)" value="${title}">
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 auth-only" onclick="this.closest('.recipe-section').remove()">🗑️ 刪除此區塊</button>
+                </div>
+                <div class="row g-1 mb-1 text-center align-items-end">
+                    <div class="col-${hasBrand ? 3 : 4} text-muted small pb-1">食材名稱</div>
+                    <div class="col-${hasBrand ? 2 : 3}"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcPctFromGrams('${sectionId}')">🔄 g算%</button></div>
+                    <div class="col-${hasBrand ? 3 : 4}"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcGramsFromPct('${sectionId}')">🔄 %算g</button></div>
+                    ${hasBrand ? '<div class="col-3 text-muted small pb-1">品牌</div>' : ''}
+                    <div class="col-1"></div>
+                </div>
+                <div class="section-rows-container"></div>
+                <button type="button" class="btn btn-sm btn-light border w-100 mt-1 text-primary fw-bold auth-only" onclick="addRecipeRow('${sectionId}', ${hasBrand}, ${isRequired})">＋ 新增食材至此區塊</button>
+            `;
+            container.appendChild(sec);
+            return sectionId;
+        }
+
+        // 新增配方列 (isRequired 用來區分原始配方和實驗配方是否必填)
+        function addRecipeRow(sectionId, hasBrand, isRequired, name = '', pct = '', weight = '', brand = '') {
+            const containerRows = document.querySelector(`#${sectionId} .section-rows-container`);
             const row = document.createElement('div');
             row.className = 'row g-1 mb-2 recipe-row align-items-center';
 
@@ -350,53 +547,78 @@
             <div class="col-${colSize.p}"><input type="number" step="0.1" class="form-control ing-pct" placeholder="%" value="${pct}"></div>
             <div class="col-${colSize.w}"><input type="number" step="0.1" class="form-control ing-weight" placeholder="克數" value="${weight}" ${reqAttr}></div>
             ${brandHTML}
-            <div class="col-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger w-100 px-1" onclick="this.closest('.recipe-row').remove()">×</button></div>
+            <div class="col-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger w-100 px-1 auth-only" onclick="this.closest('.recipe-row').remove()">×</button></div>
         `;
-            container.appendChild(row);
+            containerRows.appendChild(row);
         }
 
-        // 將配方表單轉成文字
+        // 將配方表單轉成文字 (支援多區塊)
         function compileRecipe(containerId, hasBrand) {
-            const rows = document.querySelectorAll(`#${containerId} .recipe-row`);
             let recipeString = '';
-            rows.forEach(row => {
-                const name = row.querySelector('.ing-name').value.trim();
-                const pct = row.querySelector('.ing-pct').value;
-                const weight = row.querySelector('.ing-weight').value;
-                let brand = hasBrand ? (row.querySelector('.ing-brand')?.value || '') : '';
-                if (name || weight) {
-                    let parts = [];
-                    if (name) parts.push(name);
-                    if (pct) parts.push(`${pct}%`);
-                    if (weight) parts.push(`${weight}g`);
-                    if (brand) parts.push(`(${brand})`);
-
-                    if (hasBrand) {
-                        const validPurchase = p =>
-                            p.ingredient && p.ingredient.trim() === name &&
-                            parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
-                        const purchase = brand
-                            ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
-                            : dbPurchases.find(p => validPurchase(p));
-                        if (purchase) {
-                            parts.push(`$${purchase.price}/${purchase.weight}g`);
-                        }
-                    }
-
-                    recipeString += parts.join(' | ') + '\n';
+            document.querySelectorAll(`#${containerId} .recipe-section`).forEach(sec => {
+                const title = sec.querySelector('.section-title-input').value.trim();
+                if (title) {
+                    recipeString += `## ${title}\n`;
                 }
+                const rows = sec.querySelectorAll('.recipe-row');
+                rows.forEach(row => {
+                    const name = row.querySelector('.ing-name').value.trim();
+                    const pct = row.querySelector('.ing-pct').value;
+                    const weight = row.querySelector('.ing-weight').value;
+                    let brand = hasBrand ? (row.querySelector('.ing-brand')?.value || '') : '';
+                    if (name || weight) {
+                        let parts = [];
+                        if (name) parts.push(name);
+                        if (pct) parts.push(`${pct}%`);
+                        if (weight) parts.push(`${weight}g`);
+                        if (brand) parts.push(`(${brand})`);
+
+                        if (hasBrand) {
+                            const validPurchase = p =>
+                                p.ingredient && p.ingredient.trim() === name &&
+                                parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
+                            const purchase = brand
+                                ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
+                                : dbPurchases.find(p => validPurchase(p));
+                            if (purchase) {
+                                parts.push(`$${purchase.price}/${purchase.weight}g`);
+                            }
+                        }
+                        recipeString += parts.join(' | ') + '\n';
+                    }
+                });
             });
             return recipeString.trim();
         }
 
-        // 解析文字配方填入表單
+        // 解析文字配方填入表單 (支援多區塊)
         function parseAndRenderRecipe(recipeString, containerId, hasBrand, isRequired) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-            if (!recipeString) { addRecipeRow(containerId, hasBrand, isRequired); return; }
 
+            if (!recipeString) {
+                const secId = addRecipeSection(containerId, hasBrand, isRequired, '主麵團');
+                addRecipeRow(secId, hasBrand, isRequired);
+                return;
+            }
+
+            let currentSectionId = null;
             const lines = recipeString.split('\n');
+
+            // 防呆：如果最一開始沒有區塊標題，建立預設主區塊
+            if (lines.length > 0 && !lines[0].startsWith('## ')) {
+                currentSectionId = addRecipeSection(containerId, hasBrand, isRequired, '主麵團');
+            }
+
             lines.forEach(line => {
+                if (!line.trim()) return;
+
+                if (line.startsWith('## ')) {
+                    const title = line.replace('## ', '').trim();
+                    currentSectionId = addRecipeSection(containerId, hasBrand, isRequired, title);
+                    return;
+                }
+
                 const parts = line.split(' | ');
                 let name = parts[0] || '';
                 let pct = '', weight = '', brand = '';
@@ -406,7 +628,11 @@
                     else if (p.includes('g') && !p.includes('$') && !p.includes('/')) weight = p.replace('g', '');
                     else if (p.includes('(')) brand = p.replace(/[()]/g, '');
                 });
-                addRecipeRow(containerId, hasBrand, isRequired, name, pct, weight, brand);
+
+                if (!currentSectionId) {
+                    currentSectionId = addRecipeSection(containerId, hasBrand, isRequired, '主麵團');
+                }
+                addRecipeRow(currentSectionId, hasBrand, isRequired, name, pct, weight, brand);
             });
         }
 
@@ -420,7 +646,7 @@
             if (!confirm('確定要清除所有欄位嗎？這將清空品項名稱、食材、步驟及溫度/時間設定。')) return;
             document.getElementById('recipe_name').value = '';
             document.getElementById('target-recipe-container').innerHTML = '';
-            addRecipeRow('target-recipe-container', false, true);
+            parseAndRenderRecipe('', 'target-recipe-container', false, true);
             document.getElementById('target_steps').value = '';
             document.getElementById('target_temp_up').value = '';
             document.getElementById('target_temp_down').value = '';
@@ -518,6 +744,70 @@
         }
 
 
+        function populateDatalists() {
+            const ingList = document.getElementById('ingredient-list');
+            ingList.innerHTML = '';
+            const uniqueIngs = [...new Set(dbOptions.filter(o => o.ingredient).map(o => o.ingredient.trim()))];
+            uniqueIngs.forEach(ing => {
+                if (ing) {
+                    const opt = document.createElement('option');
+                    opt.value = ing;
+                    ingList.appendChild(opt);
+                }
+            });
+
+            const storeList = document.getElementById('store-list');
+            storeList.innerHTML = '';
+            const uniqueStores = [...new Set(dbOptions.filter(o => o.store).map(o => o.store.trim()))];
+            uniqueStores.forEach(s => {
+                if (s) {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    storeList.appendChild(opt);
+                }
+            });
+
+            updateBrandDatalist('');
+        }
+
+        function updateBrandDatalist(ingredientName) {
+            const dataList = document.getElementById('brand-list');
+            dataList.innerHTML = '';
+
+            let brands = [];
+            if (ingredientName) {
+                brands = dbOptions.filter(o => o.ingredient && o.ingredient.trim() === ingredientName && o.brand).map(o => o.brand.trim());
+            }
+
+            if (brands.length === 0) {
+                brands = [...new Set(dbOptions.filter(o => o.brand).map(o => o.brand.trim()))];
+            } else {
+                brands = [...new Set(brands)];
+            }
+
+            brands.forEach(b => {
+                if (b) {
+                    const opt = document.createElement('option');
+                    opt.value = b;
+                    dataList.appendChild(opt);
+                }
+            });
+        }
+
+        // 動態更新品牌選單事件
+        document.addEventListener('focusin', function (e) {
+            if (e.target.classList.contains('ing-brand')) {
+                const row = e.target.closest('.row');
+                if (row) {
+                    const ingInput = row.querySelector('.ing-name');
+                    if (ingInput) updateBrandDatalist(ingInput.value.trim());
+                }
+            } else if (e.target.id === 'pur_brand') {
+                const ingInput = document.getElementById('pur_ingredient');
+                if (ingInput) updateBrandDatalist(ingInput.value.trim());
+            }
+        });
+
         // 載入與初始化
         async function loadData() {
             const container = document.getElementById('recordsContainer');
@@ -528,10 +818,12 @@
                 dbRecipes = data.recipes || [];
                 dbRecords = data.records || [];
                 dbPurchases = data.purchases || [];
+                dbOptions = data.options || [];
 
+                populateDatalists();
                 renderRecordsAccordion();
                 renderPurchases();
-                addRecipeRow('target-recipe-container', false, true);
+                parseAndRenderRecipe('', 'target-recipe-container', false, true);
             } catch (error) {
                 container.innerHTML = '<p class="text-danger text-center">載入失敗</p>';
             }
@@ -584,7 +876,7 @@
             document.getElementById('recordForm').style.display = 'block';
             document.getElementById('recordForm').reset();
             document.getElementById('actual-recipe-container').innerHTML = '';
-            addRecipeRow('actual-recipe-container', true, false);
+            parseAndRenderRecipe('', 'actual-recipe-container', true, false);
 
             // 重置成本明細
             currentCalculatedCostStr = '';
@@ -605,6 +897,7 @@
             document.getElementById('actual_temp_up').value = record.actual_temp_up || '';
             document.getElementById('actual_temp_down').value = record.actual_temp_down || '';
             document.getElementById('actual_time').value = record.actual_time || '';
+            document.getElementById('oven_spec').value = record.oven_spec || '';
             document.getElementById('experiment_purpose').value = record.experiment_purpose || '';
             document.getElementById('yield_amount').value = record.yield_amount || '';
             document.getElementById('result_notes').value = record.result_notes || '';
@@ -719,6 +1012,7 @@
                 actual_temp_up: document.getElementById('actual_temp_up').value,
                 actual_temp_down: document.getElementById('actual_temp_down').value,
                 actual_time: document.getElementById('actual_time').value,
+                oven_spec: document.getElementById('oven_spec').value,
                 experiment_purpose: document.getElementById('experiment_purpose').value,
                 yield_amount: document.getElementById('yield_amount').value,
                 result_notes: document.getElementById('result_notes').value,
@@ -815,9 +1109,10 @@
                 }
 
                 let recordsHTML = records.map(r => {
+                    const isLoggedIn = sessionStorage.getItem('baking_lab_auth') === 'true';
                     return `
-                    <div class="record-card p-3 mb-3 border rounded shadow-sm position-relative" style="cursor: pointer;" onclick="openRecordFromAccordion('${r.id}')" title="點擊載入此紀錄">
-                        <span class="position-absolute top-0 end-0 p-2 text-primary small mt-1 me-1"><i class="fw-bold">✏️ 編輯</i></span>
+                    <div class="record-card p-3 mb-3 border rounded shadow-sm position-relative" style="${isLoggedIn ? 'cursor: pointer;' : ''}" ${isLoggedIn ? `onclick="openRecordFromAccordion('${r.id}')"` : ''} title="${isLoggedIn ? '點擊載入此紀錄' : ''}">
+                        ${isLoggedIn ? '<span class="position-absolute top-0 end-0 p-2 text-primary small mt-1 me-1"><i class="fw-bold">✏️ 編輯</i></span>' : ''}
                         <p class="text-secondary fw-bold small mb-2">🕒 紀錄時間: ${formatDateStr(r.date)}</p>
                         ${r.experiment_purpose ? '<p class="mb-2 small"><strong>🎯 目的：</strong> <span class="badge bg-info text-dark">' + r.experiment_purpose + '</span></p>' : ''}
                         <div class="bg-light p-2 rounded mb-2 small" style="font-family: monospace;"><strong>🧪 實驗配方：</strong><br>${formatText(r.actual_recipe)}</div>
@@ -826,9 +1121,12 @@
                             <div class="col-4"><strong>下火:</strong> <span class="text-danger">${r.actual_temp_down ? r.actual_temp_down + '<sup>o</sup>C' : '-'}</span></div>
                             <div class="col-4"><strong>時間:</strong> ${r.actual_time ? r.actual_time + ' 分鐘' : '-'}</div>
                         </div>
-                        <p class="mb-2 small"><strong>數量：</strong> ${r.yield_amount || '-'}</p>
-                        <div class="alert alert-secondary mb-0 p-2 small"><strong>心得：</strong><br>${formatText(r.result_notes)}</div>
-                        ${r.total_cost ? '<div class="d-flex justify-content-between align-items-center mt-2 p-2 border rounded bg-white small"><span class="fw-bold">💰 總成本</span><span class="fw-bold text-success fs-6">$' + r.total_cost + '</span></div>' : ''}
+                        <div class="row mb-2 small">
+                            <div class="col-6"><strong>烤箱:</strong> ${r.oven_spec ? '<span class="badge bg-secondary">' + r.oven_spec + '</span>' : '-'}</div>
+                            <div class="col-6"><strong>數量：</strong> ${r.yield_amount || '-'}</div>
+                        </div>
+                        ${isLoggedIn ? `<div class="alert alert-secondary mb-0 p-2 small"><strong>心得：</strong><br>${formatText(r.result_notes)}</div>` : ''}
+                        ${(isLoggedIn && r.total_cost) ? '<div class="d-flex justify-content-between align-items-center mt-2 p-2 border rounded bg-white small"><span class="fw-bold">💰 總成本</span><span class="fw-bold text-success fs-6">$' + r.total_cost + '</span></div>' : ''}
                     </div>`;
                 }).join('');
 
@@ -851,7 +1149,10 @@
             });
         }
 
-        loadData();
+        // 已登入時，若 checkSession 尚未觸發 loadData，補呼叫一次
+        if (sessionStorage.getItem('baking_lab_auth') === 'true' && dbRecipes.length === 0) {
+            loadData();
+        }
 
         // 計算食材成本
         async function calculateCost(btn) {
