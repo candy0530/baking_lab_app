@@ -127,6 +127,30 @@
             pointer-events: auto !important;
             background-color: #fff !important;
         }
+
+        /* 拖拉排序樣式 */
+        .drag-handle {
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            height: 100%;
+            font-size: 1.1rem;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        .recipe-row.dragging {
+            opacity: 0.5;
+            background-color: #f1f3f5;
+            border: 1px dashed #ced4da;
+            border-radius: 4px;
+        }
+        body:not(.logged-in) .drag-handle {
+            pointer-events: none;
+            opacity: 0.3;
+        }
     </style>
 </head>
 
@@ -318,7 +342,7 @@
             <h5 class="mb-3 text-secondary">🛋️ 購買紀錄</h5>
             <div class="card mb-3">
                 <div class="card-body">
-                    <h6 class="card-title mb-3">➕ 新增購買紀錄</h6>
+                    <h6 class="card-title mb-3" id="purchase-form-title">➕ 新增購買紀錄</h6>
                     <div class="row g-2 mb-2">
                         <div class="col-6">
                             <label class="form-label text-muted small mb-1">品項</label>
@@ -519,17 +543,53 @@
                     <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 auth-only" onclick="this.closest('.recipe-section').remove()">🗑️ 刪除此區塊</button>
                 </div>
                 <div class="row g-1 mb-1 text-center align-items-end">
-                    <div class="col-${hasBrand ? 3 : 4} text-muted small pb-1">食材名稱</div>
+                    <div class="col-1"></div>
+                    <div class="col-${hasBrand ? 3 : 3} text-muted small pb-1">食材名稱</div>
                     <div class="col-${hasBrand ? 2 : 3}"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcPctFromGrams('${sectionId}')">🔄 g算%</button></div>
                     <div class="col-${hasBrand ? 3 : 4}"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcGramsFromPct('${sectionId}')">🔄 %算g</button></div>
-                    ${hasBrand ? '<div class="col-3 text-muted small pb-1">品牌</div>' : ''}
+                    ${hasBrand ? '<div class="col-2 text-muted small pb-1">品牌</div>' : ''}
                     <div class="col-1"></div>
                 </div>
                 <div class="section-rows-container"></div>
                 <button type="button" class="btn btn-sm btn-light border w-100 mt-1 text-primary fw-bold auth-only" onclick="addRecipeRow('${sectionId}', ${hasBrand}, ${isRequired})">＋ 新增食材至此區塊</button>
             `;
             container.appendChild(sec);
+
+            // 綁定拖拉事件監聽至容器
+            const containerRows = sec.querySelector('.section-rows-container');
+            if (containerRows) {
+                setupDragAndDrop(containerRows);
+            }
+
             return sectionId;
+        }
+
+        // 設置拖拉排序事件
+        function setupDragAndDrop(container) {
+            container.addEventListener('dragover', e => {
+                e.preventDefault();
+                const dragging = document.querySelector('.recipe-row.dragging');
+                if (!dragging) return;
+                const afterElement = getDragAfterElement(container, e.clientY);
+                if (afterElement == null) {
+                    container.appendChild(dragging);
+                } else {
+                    container.insertBefore(dragging, afterElement);
+                }
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.recipe-row:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
         // 新增配方列 (isRequired 用來區分原始配方和實驗配方是否必填)
@@ -539,16 +599,38 @@
             row.className = 'row g-1 mb-2 recipe-row align-items-center';
 
             let reqAttr = isRequired ? 'required' : '';
-            let brandHTML = hasBrand ? `<div class="col-3"><input type="text" list="brand-list" class="form-control ing-brand" placeholder="品牌" value="${brand}"></div>` : '';
-            let colSize = hasBrand ? { n: 3, p: 2, w: 3 } : { n: 4, p: 3, w: 4 };
+            let brandHTML = hasBrand ? `<div class="col-2"><input type="text" list="brand-list" class="form-control ing-brand" placeholder="品牌" value="${brand}"></div>` : '';
+            let colSize = hasBrand ? { n: 3, p: 2, w: 3 } : { n: 3, p: 3, w: 4 };
 
             row.innerHTML = `
+            <div class="col-1 text-center"><div class="drag-handle text-muted">☰</div></div>
             <div class="col-${colSize.n}"><input type="text" list="ingredient-list" class="form-control ing-name" placeholder="食材" value="${name}" ${reqAttr}></div>
             <div class="col-${colSize.p}"><input type="number" step="0.1" class="form-control ing-pct" placeholder="%" value="${pct}"></div>
             <div class="col-${colSize.w}"><input type="number" step="0.1" class="form-control ing-weight" placeholder="克數" value="${weight}" ${reqAttr}></div>
             ${brandHTML}
             <div class="col-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger w-100 px-1 auth-only" onclick="this.closest('.recipe-row').remove()">×</button></div>
         `;
+
+            // 綁定拖拉事件
+            row.addEventListener('dragstart', () => {
+                row.classList.add('dragging');
+            });
+            row.addEventListener('dragend', () => {
+                row.classList.remove('dragging');
+                row.removeAttribute('draggable');
+            });
+
+            // 限制僅能透過拖拉把手觸發 drag
+            const handle = row.querySelector('.drag-handle');
+            if (handle) {
+                handle.addEventListener('mousedown', () => {
+                    row.setAttribute('draggable', 'true');
+                });
+                handle.addEventListener('mouseup', () => {
+                    row.removeAttribute('draggable');
+                });
+            }
+
             containerRows.appendChild(row);
         }
 
@@ -574,14 +656,19 @@
                         if (brand) parts.push(`(${brand})`);
 
                         if (hasBrand) {
-                            const validPurchase = p =>
-                                p.ingredient && p.ingredient.trim() === name &&
-                                parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
-                            const purchase = brand
-                                ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
-                                : dbPurchases.find(p => validPurchase(p));
-                            if (purchase) {
-                                parts.push(`$${purchase.price}/${purchase.weight}g`);
+                            const eggPricing = resolveEggPricing(name, brand, dbPurchases);
+                            if (eggPricing) {
+                                parts.push(eggPricing.priceTag);
+                            } else {
+                                const validPurchase = p =>
+                                    p.ingredient && p.ingredient.trim() === name &&
+                                    parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
+                                const purchase = brand
+                                    ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
+                                    : dbPurchases.find(p => validPurchase(p));
+                                if (purchase) {
+                                    parts.push(`$${purchase.price}/${purchase.weight}g`);
+                                }
                             }
                         }
                         recipeString += parts.join(' | ') + '\n';
@@ -626,7 +713,7 @@
                 parts.forEach(p => {
                     if (p.includes('%')) pct = p.replace('%', '');
                     else if (p.includes('g') && !p.includes('$') && !p.includes('/')) weight = p.replace('g', '');
-                    else if (p.includes('(')) brand = p.replace(/[()]/g, '');
+                    else if (p.includes('(') && !p.includes('$') && !p.includes('/')) brand = p.replace(/[()]/g, '');
                 });
 
                 if (!currentSectionId) {
@@ -920,7 +1007,7 @@
 
                     parts.forEach(p => {
                         if (p.includes('g') && !p.includes('$') && !p.includes('/')) weight = p.replace('g', '');
-                        if (p.includes('(')) brand = p.replace(/[()]/g, '');
+                        if (p.includes('(') && !p.includes('$') && !p.includes('/')) brand = p.replace(/[()]/g, '');
                         if (p.includes('$') || p.includes('/')) priceTag = p;
                     });
 
@@ -1149,6 +1236,88 @@
             });
         }
 
+        // 解析蛋的計價資訊：將全蛋、蛋白、蛋黃等依比例對應到購買的「雞蛋/蛋」紀錄
+        function resolveEggPricing(ingredientName, brand, dbPurchases) {
+            const eggKeywords = ['全蛋', '蛋液', '全蛋液', '蛋黃', '蛋黃液', '蛋白', '蛋白液', '雞蛋', '蛋'];
+            const name = ingredientName.trim();
+            if (!eggKeywords.includes(name)) return null;
+
+            let eggType = 'whole';
+            if (['蛋黃', '蛋黃液'].includes(name)) {
+                eggType = 'yolk';
+            } else if (['蛋白', '蛋白液'].includes(name)) {
+                eggType = 'white';
+            }
+
+            const validPurchase = p =>
+                p.ingredient &&
+                parseFloat(p.weight) > 0 &&
+                parseFloat(p.price) > 0;
+
+            const shellEggNames = ['雞蛋', '蛋', '中型蛋'];
+            
+            // 1. 優先匹配具有相同品牌且為 '雞蛋' / '蛋' / '中型蛋' 的紀錄
+            let purchase = brand
+                ? dbPurchases.find(p => validPurchase(p) && shellEggNames.includes(p.ingredient.trim()) && p.brand && p.brand.trim() === brand)
+                : dbPurchases.find(p => validPurchase(p) && shellEggNames.includes(p.ingredient.trim()));
+
+            // 2. 次之匹配無品牌（或品牌不符）但為 '雞蛋' / '蛋' / '中型蛋' 的紀錄
+            if (!purchase && brand) {
+                purchase = dbPurchases.find(p => validPurchase(p) && shellEggNames.includes(p.ingredient.trim()));
+            }
+
+            // 3. 再者匹配名稱包含 '雞蛋' 或 '蛋' 的紀錄
+            if (!purchase) {
+                purchase = brand
+                    ? dbPurchases.find(p => validPurchase(p) && p.ingredient.trim().includes('雞蛋') && p.brand && p.brand.trim() === brand)
+                    : dbPurchases.find(p => validPurchase(p) && p.ingredient.trim().includes('雞蛋'));
+            }
+            if (!purchase) {
+                purchase = brand
+                    ? dbPurchases.find(p => validPurchase(p) && p.ingredient.trim().includes('蛋') && !p.ingredient.trim().includes('粉') && p.brand && p.brand.trim() === brand)
+                    : dbPurchases.find(p => validPurchase(p) && p.ingredient.trim().includes('蛋') && !p.ingredient.trim().includes('粉'));
+            }
+
+            // 4. 最後退回精確匹配
+            if (!purchase) {
+                purchase = brand
+                    ? dbPurchases.find(p => validPurchase(p) && p.ingredient.trim() === name && p.brand && p.brand.trim() === brand)
+                    : dbPurchases.find(p => validPurchase(p) && p.ingredient.trim() === name);
+            }
+
+            if (!purchase) return null;
+
+            const rawWeight = parseFloat(purchase.weight);
+            const rawPrice = parseFloat(purchase.price);
+            const unitPriceShell = rawPrice / rawWeight;
+
+            let unitPrice = unitPriceShell;
+            let priceTag = `$${purchase.price}/${purchase.weight}g`;
+
+            const isShellEgg = shellEggNames.includes(purchase.ingredient.trim()) || 
+                               purchase.ingredient.trim().includes('雞蛋') ||
+                               ['全蛋', '蛋白', '蛋黃'].includes(purchase.ingredient.trim());
+
+            if (isShellEgg) {
+                if (eggType === 'whole') {
+                    unitPrice = unitPriceShell * (60 / 50); // 全蛋去殼50g，對應60g含殼蛋
+                    priceTag = `$${purchase.price}/${purchase.weight}g(含殼) 換算全蛋`;
+                } else if (eggType === 'yolk') {
+                    unitPrice = unitPriceShell * (20 / 17); // 蛋黃佔1/3 (對應20g含殼蛋)，重量約17g
+                    priceTag = `$${purchase.price}/${purchase.weight}g(含殼) 換算蛋黃`;
+                } else if (eggType === 'white') {
+                    unitPrice = unitPriceShell * (40 / 34); // 蛋白佔2/3 (對應40g含殼蛋)，重量約34g
+                    priceTag = `$${purchase.price}/${purchase.weight}g(含殼) 換算蛋白`;
+                }
+            }
+
+            return {
+                purchase,
+                unitPrice,
+                priceTag
+            };
+        }
+
         // 已登入時，若 checkSession 尚未觸發 loadData，補呼叫一次
         if (sessionStorage.getItem('baking_lab_auth') === 'true' && dbRecipes.length === 0) {
             loadData();
@@ -1195,37 +1364,51 @@
                 const brand = row.querySelector('.ing-brand')?.value?.trim();
                 if (!name || !weight) return;
 
-                const validPurchase = p =>
-                    p.ingredient && p.ingredient.trim() === name &&
-                    parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
-
-                // 有品牌則優先配對食材+品牌，無品牌則取最新一筆
-                const purchase = brand
-                    ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
-                    : dbPurchases.find(p => validPurchase(p));
-
                 const label = brand ? `${name} (${brand})` : name;
 
-                if (purchase) {
-                    const unitPrice = parseFloat(purchase.price) / parseFloat(purchase.weight);
-                    const cost = weight * unitPrice;
+                const eggPricing = resolveEggPricing(name, brand, dbPurchases);
+
+                if (eggPricing) {
+                    const cost = weight * eggPricing.unitPrice;
                     totalCost += cost;
                     tableRows += `
                         <tr>
                             <td>${label}</td>
                             <td class="text-end">${weight}g</td>
-                            <td class="text-end text-muted small">$${purchase.price}/${purchase.weight}g</td>
+                            <td class="text-end text-muted small">${eggPricing.priceTag}</td>
                             <td class="text-end fw-bold text-success">$${cost.toFixed(1)}</td>
                         </tr>`;
                 } else {
-                    hasWarning = true;
-                    tableRows += `
-                        <tr class="table-warning">
-                            <td>${label}</td>
-                            <td class="text-end">${weight}g</td>
-                            <td class="text-end text-muted small">—</td>
-                            <td class="text-end text-muted">查無紀錄</td>
-                        </tr>`;
+                    const validPurchase = p =>
+                        p.ingredient && p.ingredient.trim() === name &&
+                        parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
+
+                    // 有品牌則優先配對食材+品牌，無品牌則取最新一筆
+                    const purchase = brand
+                        ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
+                        : dbPurchases.find(p => validPurchase(p));
+
+                    if (purchase) {
+                        const unitPrice = parseFloat(purchase.price) / parseFloat(purchase.weight);
+                        const cost = weight * unitPrice;
+                        totalCost += cost;
+                        tableRows += `
+                            <tr>
+                                <td>${label}</td>
+                                <td class="text-end">${weight}g</td>
+                                <td class="text-end text-muted small">$${purchase.price}/${purchase.weight}g</td>
+                                <td class="text-end fw-bold text-success">$${cost.toFixed(1)}</td>
+                            </tr>`;
+                    } else {
+                        hasWarning = true;
+                        tableRows += `
+                            <tr class="table-warning">
+                                <td>${label}</td>
+                                <td class="text-end">${weight}g</td>
+                                <td class="text-end text-muted small">—</td>
+                                <td class="text-end text-muted">查無紀錄</td>
+                            </tr>`;
+                    }
                 }
             });
 
@@ -1261,6 +1444,9 @@
                 </div>`;
         }
 
+        // 編輯/刪除購買紀錄狀態與處理
+        let currentPurchaseId = null;
+
         // 儲存購買紀錄
         async function savePurchase() {
             const ingredient = document.getElementById('pur_ingredient').value.trim();
@@ -1268,10 +1454,12 @@
             const btn = document.getElementById('btnSavePurchase');
             btn.disabled = true; btn.innerText = '儲存中...';
 
+            const isUpdate = currentPurchaseId !== null;
+
             const payload = {
-                action: 'save_purchase',
-                id: Date.now().toString(),
-                date: new Date().toLocaleString('zh-TW', { hour12: false }),
+                action: isUpdate ? 'update_purchase' : 'save_purchase',
+                id: isUpdate ? currentPurchaseId : Date.now().toString(),
+                date: isUpdate ? undefined : new Date().toLocaleString('zh-TW', { hour12: false }), // 更新時不覆蓋原時間
                 ingredient,
                 weight: document.getElementById('pur_weight').value,
                 price: document.getElementById('pur_price').value,
@@ -1284,19 +1472,110 @@
                 const result = await res.json();
                 if (result.status !== 'success') {
                     alert('⚠️ 儲存失敗：' + (result.message || '未知錯誤'));
-                    btn.disabled = false; btn.innerText = '💾 儲存購買紀錄';
+                    btn.disabled = false;
+                    btn.innerText = isUpdate ? '💾 更新此筆購買紀錄' : '💾 儲存購買紀錄';
                     return;
                 }
-                dbPurchases.unshift(payload);
+
+                if (isUpdate) {
+                    const idx = dbPurchases.findIndex(p => String(p.id) === String(currentPurchaseId));
+                    if (idx > -1) {
+                        payload.date = dbPurchases[idx].date; // 保留原始日期
+                        dbPurchases[idx] = payload;
+                    }
+                    alert('購買紀錄已更新！');
+                } else {
+                    dbPurchases.unshift(payload);
+                    alert('購買紀錄已新增！');
+                }
+
                 renderPurchases();
-                // 清空表單
-                ['pur_ingredient', 'pur_weight', 'pur_price', 'pur_brand', 'pur_store'].forEach(id => {
-                    document.getElementById(id).value = '';
-                });
+                resetPurchaseForm();
             } catch (err) {
                 alert('⚠️ 網路錯誤：' + err.message);
             }
-            btn.disabled = false; btn.innerText = '💾 儲存購買紀錄';
+            btn.disabled = false;
+        }
+
+        // 編輯購買紀錄載入表單
+        function editPurchase(id) {
+            const p = dbPurchases.find(x => String(x.id) === String(id));
+            if (!p) return;
+
+            currentPurchaseId = p.id;
+            document.getElementById('purchase-form-title').innerText = '✏️ 編輯購買紀錄';
+            document.getElementById('pur_ingredient').value = p.ingredient || '';
+            document.getElementById('pur_brand').value = p.brand || '';
+            document.getElementById('pur_weight').value = p.weight || '';
+            document.getElementById('pur_price').value = p.price || '';
+            document.getElementById('pur_store').value = p.store || '';
+            document.getElementById('btnSavePurchase').innerText = '💾 更新此筆購買紀錄';
+
+            // 顯示取消編輯按鈕
+            if (!document.getElementById('btnCancelPurchaseEdit')) {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.id = 'btnCancelPurchaseEdit';
+                cancelBtn.className = 'btn btn-outline-secondary btn-sm w-100 mt-2';
+                cancelBtn.innerText = '❌ 取消編輯';
+                cancelBtn.onclick = resetPurchaseForm;
+                document.getElementById('btnSavePurchase').after(cancelBtn);
+            }
+
+            // 滾動到表單
+            const formElement = document.getElementById('purchase-form-title');
+            if (formElement) {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // 重置購買紀錄表單
+        function resetPurchaseForm() {
+            currentPurchaseId = null;
+            document.getElementById('purchase-form-title').innerText = '➕ 新增購買紀錄';
+            document.getElementById('pur_ingredient').value = '';
+            document.getElementById('pur_brand').value = '';
+            document.getElementById('pur_weight').value = '';
+            document.getElementById('pur_price').value = '';
+            document.getElementById('pur_store').value = '';
+            document.getElementById('btnSavePurchase').innerText = '💾 儲存購買紀錄';
+            
+            const cancelBtn = document.getElementById('btnCancelPurchaseEdit');
+            if (cancelBtn) cancelBtn.remove();
+        }
+
+        // 刪除購買紀錄
+        async function deletePurchase(id) {
+            if (!confirm('確定要刪除此筆購買紀錄嗎？')) return;
+
+            const p = dbPurchases.find(x => String(x.id) === String(id));
+            if (!p) return;
+
+            const payload = {
+                action: 'delete_purchase',
+                id: String(id)
+            };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (result.status !== 'success') {
+                    alert('⚠️ 刪除失敗：' + (result.message || '未知錯誤'));
+                    return;
+                }
+                
+                const idx = dbPurchases.findIndex(x => String(x.id) === String(id));
+                if (idx > -1) {
+                    dbPurchases.splice(idx, 1);
+                }
+                alert('購買紀錄已刪除！');
+                renderPurchases();
+                if (currentPurchaseId === id) {
+                    resetPurchaseForm();
+                }
+            } catch (err) {
+                alert('⚠️ 網路錯誤：' + err.message);
+            }
         }
 
         // 渲染購買紀錄列表
@@ -1306,8 +1585,11 @@
                 container.innerHTML = '<p class="text-muted small text-center">尚無購買紀錄</p>';
                 return;
             }
+            
+            const isLoggedIn = sessionStorage.getItem('baking_lab_auth') === 'true';
+
             container.innerHTML = dbPurchases.map(p => `
-                <div class="card mb-2 border-0 shadow-sm">
+                <div class="card mb-2 border-0 shadow-sm position-relative">
                     <div class="card-body py-2 px-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -1319,9 +1601,17 @@
                                 ${p.weight ? '<span class="text-muted ms-2">' + p.weight + 'g</span>' : ''}
                             </div>
                         </div>
-                        <div class="small text-muted mt-1">
-                            ${p.store ? '<span class="badge bg-secondary me-1">' + p.store + '</span>' : ''}
-                            <span>${p.date}</span>
+                        <div class="d-flex justify-content-between align-items-center small text-muted mt-1">
+                            <div>
+                                ${p.store ? '<span class="badge bg-secondary me-1">' + p.store + '</span>' : ''}
+                                <span>${p.date}</span>
+                            </div>
+                            ${isLoggedIn ? `
+                            <div>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-primary me-2 fw-bold" onclick="editPurchase('${p.id}')" style="font-size: 0.8rem; text-decoration: none;">✏️ 編輯</button>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-danger fw-bold" onclick="deletePurchase('${p.id}')" style="font-size: 0.8rem; text-decoration: none;">🗑️ 刪除</button>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
