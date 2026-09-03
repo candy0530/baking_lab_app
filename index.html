@@ -180,6 +180,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0" style="color: #6c757d;">🧑‍🔬 T³ 減法實驗室</h2>
             <div>
+                <button class="btn btn-sm btn-outline-primary me-2 auth-only" onclick="openPurchaseModal()">🛋️ 購買紀錄</button>
                 <button class="btn btn-sm btn-outline-primary" id="btn-show-login" onclick="showLoginModal()">🔑
                     登入</button>
                 <button class="btn btn-sm btn-outline-secondary" id="btn-logout" onclick="handleLogout()"
@@ -338,48 +339,62 @@
         </div>
 
 
-        <div id="admin-purchase-section" class="auth-only" style="display: none;">
-            <h5 class="mb-3 text-secondary">🛋️ 購買紀錄</h5>
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h6 class="card-title mb-3" id="purchase-form-title">➕ 新增購買紀錄</h6>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <label class="form-label text-muted small mb-1">品項</label>
-                            <input type="text" list="ingredient-list" class="form-control" id="pur_ingredient"
-                                placeholder="選擇食材">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label text-muted small mb-1">品牌</label>
-                            <input type="text" list="brand-list" class="form-control" id="pur_brand" placeholder="選擇品牌">
-                        </div>
+        <!-- 購買紀錄 Modal 對話框 -->
+        <div class="modal fade auth-only" id="purchaseModal" tabindex="-1" aria-labelledby="purchaseModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="purchaseModalLabel">🛋️ 購買紀錄管理</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-4">
-                            <label class="form-label text-muted small mb-1">克數</label>
-                            <div class="input-group">
-                                <input type="number" step="1" class="form-control" id="pur_weight" placeholder="0">
-                                <span class="input-group-text">g</span>
+                    <div class="modal-body" id="purchaseModalBody">
+                        <div class="card mb-3 border">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3" id="purchase-form-title">➕ 新增購買紀錄</h6>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label text-muted small mb-1">品項</label>
+                                        <input type="text" list="ingredient-list" class="form-control" id="pur_ingredient"
+                                            placeholder="選擇食材">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label text-muted small mb-1">品牌</label>
+                                        <input type="text" list="brand-list" class="form-control" id="pur_brand" placeholder="選擇品牌">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small mb-1">克數</label>
+                                        <div class="input-group">
+                                            <input type="number" step="1" class="form-control" id="pur_weight" placeholder="0">
+                                            <span class="input-group-text">g</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small mb-1">價錢</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" step="1" class="form-control" id="pur_price" placeholder="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small mb-1">購入方式</label>
+                                        <input type="text" list="store-list" class="form-control" id="pur_store"
+                                            placeholder="選擇通購處">
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-dark btn-sm w-100 mt-1" onclick="savePurchase()"
+                                    id="btnSavePurchase">💾 儲存購買紀錄</button>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <label class="form-label text-muted small mb-1">價錢</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" step="1" class="form-control" id="pur_price" placeholder="0">
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label text-muted small mb-1">購入方式</label>
-                            <input type="text" list="store-list" class="form-control" id="pur_store"
-                                placeholder="選擇通購處">
-                        </div>
+                        <h6 class="text-secondary mb-2">📜 歷史購買紀錄列表</h6>
+                        <div id="purchaseContainer"></div>
                     </div>
-                    <button type="button" class="btn btn-dark btn-sm w-100 mt-1" onclick="savePurchase()"
-                        id="btnSavePurchase">💾 儲存購買紀錄</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">關閉</button>
+                    </div>
                 </div>
             </div>
-            <div id="purchaseContainer" class="mb-5"></div>
         </div>
     </div>
 
@@ -1086,6 +1101,9 @@
                             <span class="fw-bold text-muted">當時紀錄之總成本</span>
                             <span class="fw-bold text-success fs-6">$${record.total_cost}</span>
                         </div>
+                        <div class="mt-2 text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary w-100 auth-only" onclick="openPurchaseModal()">🛠️ 開啟購買紀錄管理 (修正價錢/紀錄)</button>
+                        </div>
                     </div>`;
                 currentCalculatedCostStr = record.total_cost; // 保留讓未來直接存檔時這數字不會憑空消失
             } else {
@@ -1451,7 +1469,9 @@
                                 <td>${label}</td>
                                 <td class="text-end">${weight}g</td>
                                 <td class="text-end text-muted small">—</td>
-                                <td class="text-end text-muted">查無紀錄</td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-warning py-0 px-1" style="font-size:0.75rem;" onclick="openPurchaseModal('${(name || '').replace(/'/g, "\\'")}', '${(brand || '').replace(/'/g, "\\'")}')">➕ 補新增</button>
+                                </td>
                             </tr>`;
                     }
                 }
@@ -1486,6 +1506,9 @@
                         <span class="fw-bold text-success fs-6">$${totalCost.toFixed(1)}</span>
                     </div>
                     ${hasWarning ? '<div class="text-muted small mt-1">⚠️ 黃底列代表購買記錄中查無此食材，請先新增購買記錄。</div>' : ''}
+                    <div class="mt-2 text-center">
+                        <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="openPurchaseModal()">🛋️ 開啟購買紀錄管理 (新增/修正價錢)</button>
+                    </div>
                 </div>`;
         }
 
@@ -1542,10 +1565,26 @@
             btn.disabled = false;
         }
 
+        // 隨時開啟購買紀錄 Modal 對話框
+        function openPurchaseModal(ingredient = '', brand = '') {
+            if (ingredient) {
+                document.getElementById('pur_ingredient').value = ingredient;
+                document.getElementById('pur_brand').value = brand || '';
+                updateBrandDatalist(ingredient);
+            }
+            const modalEl = document.getElementById('purchaseModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        }
+
         // 編輯購買紀錄載入表單
         function editPurchase(id) {
             const p = dbPurchases.find(x => String(x.id) === String(id));
             if (!p) return;
+
+            openPurchaseModal();
 
             currentPurchaseId = p.id;
             document.getElementById('purchase-form-title').innerText = '✏️ 編輯購買紀錄';
@@ -1567,10 +1606,10 @@
                 document.getElementById('btnSavePurchase').after(cancelBtn);
             }
 
-            // 滾動到表單
-            const formElement = document.getElementById('purchase-form-title');
-            if (formElement) {
-                formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // 滾動到表單頂端
+            const bodyElement = document.getElementById('purchaseModalBody');
+            if (bodyElement) {
+                bodyElement.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 

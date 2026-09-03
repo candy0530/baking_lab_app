@@ -125,11 +125,17 @@ The app uses `localStorage` (with `sessionStorage` fallback, `key: baking_lab_au
 
 ---
 
-- Form fields: `pur_ingredient`, `pur_brand`, `pur_weight`, `pur_price`, `pur_store`.
-- Dynamic autocomplete datalists (`#ingredient-list`, `#brand-list`, `#store-list`):
+## 6. Purchasing Log Management (`#purchaseModal`)
+
+- **Modal Access Window**: Accessible anytime via:
+  - Header Navbar button (`🛋️ 購買紀錄`).
+  - Cost calculation summary card button (`🛠️ 開啟購買紀錄管理`).
+  - Unpriced item inline button (`➕ 補新增`) which pre-fills the purchase ingredient/brand fields.
+- **Form fields**: `pur_ingredient`, `pur_brand`, `pur_weight`, `pur_price`, `pur_store`.
+- **Dynamic autocomplete datalists** (`#ingredient-list`, `#brand-list`, `#store-list`):
   - `#ingredient-list` and `#store-list`: Populated from `Options` sheet and purchase history.
   - `#brand-list`: Dynamically generated via `updateBrandDatalist(ingredientName)` from `Purchases` sheet logs (`dbPurchases`) in reverse chronological order:
     - **Ingredient Match**: Queries `dbPurchases` for brand names associated with `ingredientName`.
     - **Egg Derivative Normalization**: When `ingredientName` is an egg derivative (`全蛋`, `蛋白`, `蛋黃`, `蛋液`, etc.), automatically maps and searches for brands recorded under shell eggs (`雞蛋`, `蛋`, `中型蛋`).
     - **Fallback Chain**: If no ingredient-specific purchase brand exists, returns all distinct brands in `dbPurchases`. If `dbPurchases` is empty, falls back to `Options` sheet brands.
-- Full CRUD support: Create, Edit (populates form with cancel button), and Delete with confirmation prompt.
+- **Full CRUD support**: Create, Edit (loads entry into modal form), and Delete with confirmation prompt.
