@@ -393,8 +393,12 @@
         let currentCalculatedCostStr = '';
 
         // ====== 登入機制 ======
+        function checkAuth() {
+            return localStorage.getItem('baking_lab_auth') === 'true' || sessionStorage.getItem('baking_lab_auth') === 'true';
+        }
+
         function updateUIForLoginState() {
-            const isLoggedIn = sessionStorage.getItem('baking_lab_auth') === 'true';
+            const isLoggedIn = checkAuth();
             if (isLoggedIn) {
                 document.body.classList.add('logged-in');
             } else {
@@ -458,6 +462,7 @@
                 const result = await res.json();
 
                 if (result.status === 'success' && result.message === 'login_ok') {
+                    localStorage.setItem('baking_lab_auth', 'true');
                     sessionStorage.setItem('baking_lab_auth', 'true');
                     hideLoginModal();
                     updateUIForLoginState();
@@ -476,6 +481,7 @@
 
         function handleLogout() {
             if (!confirm('確定要登出嗎？')) return;
+            localStorage.removeItem('baking_lab_auth');
             sessionStorage.removeItem('baking_lab_auth');
             document.getElementById('login-username').value = '';
             document.getElementById('login-password').value = '';
@@ -1235,7 +1241,7 @@
                 }
 
                 let recordsHTML = records.map(r => {
-                    const isLoggedIn = sessionStorage.getItem('baking_lab_auth') === 'true';
+                    const isLoggedIn = checkAuth();
                     return `
                     <div class="record-card p-3 mb-3 border rounded shadow-sm position-relative" style="${isLoggedIn ? 'cursor: pointer;' : ''}" ${isLoggedIn ? `onclick="openRecordFromAccordion('${r.id}')"` : ''} title="${isLoggedIn ? '點擊載入此紀錄' : ''}">
                         ${isLoggedIn ? '<span class="position-absolute top-0 end-0 p-2 text-primary small mt-1 me-1"><i class="fw-bold">✏️ 編輯</i></span>' : ''}
@@ -1358,7 +1364,7 @@
         }
 
         // 已登入時，若 checkSession 尚未觸發 loadData，補呼叫一次
-        if (sessionStorage.getItem('baking_lab_auth') === 'true' && dbRecipes.length === 0) {
+        if (checkAuth() && dbRecipes.length === 0) {
             loadData();
         }
 
@@ -1625,7 +1631,7 @@
                 return;
             }
             
-            const isLoggedIn = sessionStorage.getItem('baking_lab_auth') === 'true';
+            const isLoggedIn = checkAuth();
 
             container.innerHTML = dbPurchases.map(p => `
                 <div class="card mb-2 border-0 shadow-sm position-relative">

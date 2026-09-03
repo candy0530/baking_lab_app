@@ -14,7 +14,7 @@ This document outlines the user interface layout, user permissions, state manage
 
 ## 2. Authentication & Permission Control
 
-The app uses `sessionStorage` (`key: baking_lab_auth`) to store login state.
+The app uses `localStorage` (with `sessionStorage` fallback, `key: baking_lab_auth`) to persist login state across browser restarts and sessions.
 
 ### 2.1. Access Roles
 
