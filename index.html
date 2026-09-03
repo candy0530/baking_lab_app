@@ -861,18 +861,57 @@
             const dataList = document.getElementById('brand-list');
             dataList.innerHTML = '';
 
+            const name = (ingredientName || '').trim();
+            const eggKeywords = ['全蛋', '蛋液', '全蛋液', '蛋黃', '蛋黃液', '蛋白', '蛋白液', '雞蛋', '蛋', '中型蛋'];
+            const isEggRelated = eggKeywords.includes(name);
+
             let brands = [];
-            if (ingredientName) {
-                brands = dbOptions.filter(o => o.ingredient && o.ingredient.trim() === ingredientName && o.brand).map(o => o.brand.trim());
+
+            // 1. 優先從 dbPurchases 搜尋品牌
+            if (name) {
+                if (isEggRelated) {
+                    // 若為蛋類食材，搜尋採買紀錄中所有蛋類品牌
+                    brands = dbPurchases
+                        .filter(p => p.ingredient && eggKeywords.includes(p.ingredient.trim()) && p.brand && p.brand.trim())
+                        .map(p => p.brand.trim());
+                    if (brands.length === 0) {
+                        brands = dbPurchases
+                            .filter(p => p.ingredient && p.ingredient.trim().includes('蛋') && !p.ingredient.trim().includes('粉') && p.brand && p.brand.trim())
+                            .map(p => p.brand.trim());
+                    }
+                } else {
+                    // 一般食材，精確比對採買紀錄品名
+                    brands = dbPurchases
+                        .filter(p => p.ingredient && p.ingredient.trim() === name && p.brand && p.brand.trim())
+                        .map(p => p.brand.trim());
+                }
             }
 
+            // 2. 若該特定食材在採買紀錄中無專屬品牌，取得 dbPurchases 中出現過的所有品牌
             if (brands.length === 0) {
-                brands = [...new Set(dbOptions.filter(o => o.brand).map(o => o.brand.trim()))];
-            } else {
-                brands = [...new Set(brands)];
+                brands = dbPurchases
+                    .filter(p => p.brand && p.brand.trim())
+                    .map(p => p.brand.trim());
             }
 
-            brands.forEach(b => {
+            // 3. 若 dbPurchases 尚無紀錄（冷啟動），退回使用 dbOptions 預設品牌
+            if (brands.length === 0) {
+                if (name) {
+                    brands = dbOptions
+                        .filter(o => o.ingredient && o.ingredient.trim() === name && o.brand)
+                        .map(o => o.brand.trim());
+                }
+                if (brands.length === 0) {
+                    brands = dbOptions
+                        .filter(o => o.brand)
+                        .map(o => o.brand.trim());
+                }
+            }
+
+            // 保留近期排序並去除重複品牌
+            const uniqueBrands = [...new Set(brands)];
+
+            uniqueBrands.forEach(b => {
                 if (b) {
                     const opt = document.createElement('option');
                     opt.value = b;
