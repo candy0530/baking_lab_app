@@ -176,10 +176,11 @@
         </div>
     </div>
 
-    <div class="container py-4 max-w-md" id="main-app" style="display: none;">
+    <div class="container py-4 max-w-md" id="main-app">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0" style="color: #6c757d;">🧑‍🔬 T³ 減法實驗室</h2>
             <div>
+                <button class="btn btn-sm btn-outline-primary me-2 auth-only" onclick="openOrderModal()">📦 訂單試算</button>
                 <button class="btn btn-sm btn-outline-primary me-2 auth-only" onclick="openPurchaseModal()">🛋️ 購買紀錄</button>
                 <button class="btn btn-sm btn-outline-primary" id="btn-show-login" onclick="showLoginModal()">🔑
                     登入</button>
@@ -202,25 +203,36 @@
 
         <div class="card mb-4" id="admin-recipe-section">
             <div class="card-body">
-                <h5 class="card-title mb-3">📝 搜尋或新增配方</h5>
+                <h5 class="card-title mb-3">📝 搜尋或建立經典配方 (Master Recipe)</h5>
 
                 <div class="mb-4 position-relative">
-                    <label class="form-label text-muted small mb-1">品項名稱 (輸入以模糊搜尋或建立新配方)</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="recipe_name" placeholder="請輸入配方名稱..."
-                            autocomplete="off">
-                        <button type="button" class="btn btn-outline-danger" onclick="clearAllRecipeFields()"
-                            title="清除所有配方欄位">🗑️ 清除</button>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-1 fw-bold">主品項名稱 (搜尋或建立，如 芋頭酥)</label>
+                            <input type="text" class="form-control" id="recipe_main_name" placeholder="例如: 芋頭酥" autocomplete="off" oninput="updateCombinedRecipeName()">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small mb-1 fw-bold">版本名稱 (如 經典原味, 減糖30%, 芝麻酥)</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="recipe_version_name" placeholder="例如: 經典原味" autocomplete="off" oninput="updateCombinedRecipeName()">
+                                <button type="button" class="btn btn-outline-danger" onclick="clearAllRecipeFields()" title="清除所有欄位">🗑️ 清除</button>
+                            </div>
+                        </div>
                     </div>
-                    <div id="autocomplete-results" class="list-group position-absolute w-100 autocomplete-list"
-                        style="display: none;"></div>
+                    <input type="hidden" id="recipe_name">
+                    <div id="autocomplete-results" class="list-group position-absolute w-100 autocomplete-list" style="display: none; z-index: 1050;"></div>
                 </div>
 
                 <div class="mb-3 p-3 bg-light rounded border">
-                    <div class="section-title mb-2">🍞 原始配方明細</div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="section-title mb-0">🍞 經典配方成分與比例 (Baker's %)</div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 auth-only me-1" style="font-size: 0.8rem;" onclick="openRemainingScaleModal('target-recipe-container')">⚖️ 剩餘食材回推</button>
+                        </div>
+                    </div>
                     <div id="target-recipe-container"></div>
                     <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3 fw-bold auth-only"
-                        onclick="addRecipeSection('target-recipe-container', false, true, '新區塊')">➕ 新增配方區塊</button>
+                        onclick="addRecipeSection('target-recipe-container', false, true, '主麵團')">➕ 新增配方區塊</button>
 
                     <div class="mb-3">
                         <label class="form-label text-muted small mb-1">製作步驟</label>
@@ -271,20 +283,23 @@
                         </div>
 
                         <div class="mb-3 p-2 bg-white rounded border">
-                            <label class="form-label text-muted small mb-1 fw-bold">🎯 實驗目的 <span
+                            <label class="form-label text-muted small mb-1 fw-bold">🎯 實驗目的 / 任務 <span
                                     class="text-danger">*</span></label>
                             <input type="text" list="purpose-list" class="form-control" id="experiment_purpose"
-                                placeholder="請輸入或選擇實驗目的" required>
+                                placeholder="例如: 減糖30%實驗, 顧客訂單製作, 早餐調配, 試做" required>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <div class="text-muted small fw-bold">實驗配方明細</div>
-                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2"
-                                style="font-size: 0.8rem;" onclick="copyOriginalToActual()">⬇️ 複製配方</button>
+                            <div class="text-muted small fw-bold">實驗配方明細 (實際秤重克數)</div>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-dark py-0 px-2 me-1" style="font-size: 0.8rem;" onclick="openBaselineCompareModal()">👁️ 對照原始基準比例</button>
+                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 me-1" style="font-size: 0.8rem;" onclick="openRemainingScaleModal('actual-recipe-container')">⚖️ 剩餘食材回推</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.8rem;" onclick="copyOriginalToActual()">⬇️ 帶入原始配方</button>
+                            </div>
                         </div>
                         <div id="actual-recipe-container"></div>
                         <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3 fw-bold"
-                            onclick="addRecipeSection('actual-recipe-container', true, false, '新區塊')">➕ 新增配方區塊</button>
+                            onclick="addRecipeSection('actual-recipe-container', true, false, '主麵團')">➕ 新增配方區塊</button>
 
                         <div class="row mb-2">
                             <div class="col-4">
@@ -325,14 +340,16 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-muted small mb-1">測試結果 (口感心得)</label>
+                            <label class="form-label text-muted small mb-1">測試結果 (口感心得與品質評估)</label>
                             <textarea class="form-control" id="result_notes" rows="3"></textarea>
                         </div>
                         <button type="button" class="btn btn-outline-warning w-100 mt-2 auth-only"
                             onclick="calculateCost(this)">💰 計算食材成本</button>
                         <div id="costResult" class="mt-2" style="display:none;"></div>
-                        <button type="submit" class="btn btn-success w-100 mt-2 auth-only"
-                            id="btnSaveRecord">儲存實驗紀錄</button>
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-success flex-grow-1 auth-only" id="btnSaveRecord">儲存實驗紀錄</button>
+                            <button type="button" class="btn btn-warning auth-only" onclick="promoteRecordToRecipeVersion()" title="將本次實驗結果另存為經典配方新版本">🌟 升格為經典配方版本</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -396,6 +413,137 @@
                 </div>
             </div>
         </div>
+
+        <!-- 剩餘食材回推 Modal 對話框 -->
+        <div class="modal fade auth-only" id="remainingScaleModal" tabindex="-1" aria-labelledby="remainingScaleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title text-info" id="remainingScaleModalLabel">⚖️ 剩餘食材回推計算機</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info py-2 small mb-3">
+                            💡 請填寫現有「剩餘食材克數」，系統將自動分析<strong>瓶頸食材</strong>並回推最高可製作的批次比例與成品數量。
+                        </div>
+                        <div class="mb-3 row g-2 align-items-center bg-white p-2 border rounded">
+                            <div class="col-6">
+                                <label class="form-label text-muted small mb-1 fw-bold">原始配方預估產出數量</label>
+                                <input type="number" step="0.1" class="form-control form-control-sm" id="rem_base_yield" placeholder="例如: 10" value="10" oninput="calculateRemainingScale()">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label text-muted small mb-1 fw-bold">單位名稱</label>
+                                <input type="text" class="form-control form-control-sm" id="rem_yield_unit" placeholder="顆 / 份 / 模" value="份" oninput="calculateRemainingScale()">
+                            </div>
+                        </div>
+                        <h6 class="text-secondary mb-2 border-bottom pb-1">📋 食材庫存剩餘量輸入 (g)</h6>
+                        <div id="remainingScaleInputContainer" class="mb-3"></div>
+
+                        <div id="remainingScaleResultArea" style="display:none;" class="p-3 border rounded bg-white shadow-sm mt-3">
+                            <!-- 計算結果動態渲染於此 -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-info text-white btn-sm" id="btnApplyRemainingScale" onclick="applyRemainingScaleToRecipe()" style="display:none;">一鍵套用至配方</button>
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">關閉</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 訂單需求與多區塊材料反推 Modal 對話框 -->
+        <div class="modal fade auth-only" id="orderCalculatorModal" tabindex="-1" aria-labelledby="orderCalculatorModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title text-success" id="orderCalculatorModalLabel">📦 訂單需求與多區塊材料反推計算機</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="card mb-3 border">
+                            <div class="card-body">
+                                <h6 class="card-title mb-2 text-primary fw-bold" id="order-form-title">📝 設定訂單與區塊需求數量</h6>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small mb-1 fw-bold">選擇標的配方</label>
+                                        <select class="form-select form-select-sm" id="order_recipe_select" onchange="onOrderRecipeSelectChange()">
+                                            <option value="">-- 請選擇配方 --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small mb-1 fw-bold">訂單名稱 / 客戶名稱</label>
+                                        <input type="text" class="form-control form-control-sm" id="order_name_input" placeholder="例如: 2026/09 中秋月餅訂單 (張小姐)">
+                                    </div>
+                                </div>
+
+                                <!-- 🎯 訂單目標數量設定卡片 (純「總共要做幾顆」) -->
+                                <div class="p-3 mb-3 bg-white border rounded shadow-sm">
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-md-8">
+                                            <label class="form-label text-success small mb-1 fw-bold fs-6">🎯 訂單總共要做幾顆（份）</label>
+                                            <div class="input-group">
+                                                <input type="number" step="1" class="form-control form-control-lg fw-bold border-success text-success" id="order_target_count" placeholder="請輸入訂單總數量 (例如 100)" value="10" oninput="calculateOrderMaterials()">
+                                                <input type="text" class="form-control form-control-lg border-success fw-bold text-success" id="order_unit_name" placeholder="單位" value="顆" style="max-width:90px;" oninput="onOrderUnitNameChange()">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 text-muted small">
+                                            💡 設定總顆數與下方各區塊「一顆多少克 (g/顆)」，即可反推全案材料用量。
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3 p-3 bg-light rounded border">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold text-dark small">🧩 各區塊「一顆（份）多少克」設定</span>
+                                    </div>
+                                    <div id="orderSectionsList">
+                                        <div class="text-muted small">請先選擇標的配方。</div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small mb-1">訂單備註 (選填)</label>
+                                    <input type="text" class="form-control form-control-sm" id="order_note_input" placeholder="例如: 預計9/20交貨，派皮需多做10%損耗">
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button type="button" class="btn btn-success btn-sm px-3" onclick="saveOrderToCloud()" id="btnSaveOrder">💾 儲存訂單至雲端 Orders Sheet</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearOrderForm()">🔄 清空訂單表單</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="orderMaterialSummaryArea" class="mb-4" style="display:none;">
+                            <!-- 總材料反推彙整表渲染於此 -->
+                        </div>
+
+                        <h6 class="text-secondary mb-2 border-bottom pb-1">📜 雲端歷史訂單紀錄 (`Orders` Sheet)</h6>
+                        <div id="cloudOrdersList"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">關閉</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 👁️ 對照原始基準配方 Modal 對話框 -->
+        <div class="modal fade" id="baselineCompareModal" tabindex="-1" aria-labelledby="baselineCompareModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title text-primary" id="baselineCompareModalLabel">👁️ 本次實驗 vs 原始基準配方對照表</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-3" id="baselineCompareModalBody">
+                        <!-- 動態對照表格渲染於此 -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">關閉</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -404,8 +552,58 @@
         let dbRecords = [];
         let dbPurchases = [];
         let dbOptions = [];
+        let dbOrders = [];
         let currentRecordId = null;
         let currentCalculatedCostStr = '';
+        let currentRemainingTargetContainer = '';
+        let currentRemainingParsedRows = [];
+        let currentRemainingScaledRows = [];
+        let currentOrderId = null;
+
+        // ====== 配方名稱與版本解析工具 ======
+        function parseRecipeFullName(fullName) {
+            if (!fullName) return { mainName: '', versionName: '經典原味' };
+            const str = fullName.trim();
+            if (str.includes(' - ')) {
+                const parts = str.split(' - ');
+                return { mainName: parts[0].trim(), versionName: parts.slice(1).join(' - ').trim() };
+            }
+            if (str.includes('(') && str.endsWith(')')) {
+                const parts = str.split('(');
+                return { mainName: parts[0].trim(), versionName: parts[1].replace(')', '').trim() };
+            }
+            return { mainName: str, versionName: '經典原味' };
+        }
+
+        function buildRecipeFullName(mainName, versionName) {
+            const main = (mainName || '').trim();
+            const ver = (versionName || '').trim();
+            if (!ver || ver === '經典原味' || ver === '經典版' || ver === '預設') {
+                return main;
+            }
+            return `${main} - ${ver}`;
+        }
+
+        function updateCombinedRecipeName() {
+            const mainName = document.getElementById('recipe_main_name').value.trim();
+            const versionName = document.getElementById('recipe_version_name').value.trim();
+            const combined = buildRecipeFullName(mainName, versionName);
+            document.getElementById('recipe_name').value = combined;
+        }
+
+        function clearAllRecipeFields() {
+            document.getElementById('recipe_main_name').value = '';
+            document.getElementById('recipe_version_name').value = '';
+            document.getElementById('recipe_name').value = '';
+            document.getElementById('target_steps').value = '';
+            document.getElementById('target_temp_up').value = '';
+            document.getElementById('target_temp_down').value = '';
+            document.getElementById('target_time').value = '';
+            document.getElementById('target-recipe-container').innerHTML = '';
+            parseAndRenderRecipe('', 'target-recipe-container', false, true);
+            document.getElementById('record-selection-area').style.display = 'none';
+            document.getElementById('recordForm').style.display = 'none';
+        }
 
         // ====== 登入機制 ======
         function checkAuth() {
@@ -425,7 +623,7 @@
             const adminPurchase = document.getElementById('admin-purchase-section');
             if (adminPurchase) adminPurchase.style.display = isLoggedIn ? 'block' : 'none';
 
-            if (dbRecords.length > 0) renderRecordsAccordion();
+            if (dbRecords.length > 0 || dbRecipes.length > 0) renderRecordsAccordion();
         }
 
         function showLoginModal() {
@@ -434,64 +632,22 @@
 
         function hideLoginModal() {
             document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('login-error').style.display = 'none';
         }
 
-        // Initialize App
-        (function initApp() {
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
-            updateUIForLoginState();
-            loadData();
-        })();
+        function handleLogin() {
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const passwordInput = document.getElementById('login-password').value.trim();
+            const errorDiv = document.getElementById('login-error');
 
-        // Enter 鍵登入
-        document.getElementById('login-password').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') handleLogin();
-        });
-        document.getElementById('login-username').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') document.getElementById('login-password').focus();
-        });
-
-        async function handleLogin() {
-            const username = document.getElementById('login-username').value.trim();
-            const password = document.getElementById('login-password').value;
-            const errDiv = document.getElementById('login-error');
-            const btn = document.getElementById('btn-login');
-
-            if (!username || !password) {
-                errDiv.style.display = 'block';
-                errDiv.textContent = '請輸入帳號和密碼';
-                return;
+            if (usernameInput === 'chiamei' && passwordInput === '0530') {
+                localStorage.setItem('baking_lab_auth', 'true');
+                errorDiv.innerText = '';
+                hideLoginModal();
+                updateUIForLoginState();
+                alert('🔓 登入成功！已解除所有維護與編輯鎖定。');
+            } else {
+                errorDiv.innerText = '❌ 帳號或密碼錯誤，請重新輸入';
             }
-
-            btn.disabled = true;
-            btn.textContent = '驗證中...';
-            errDiv.style.display = 'none';
-
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'login', username: username, password: password })
-                });
-                const result = await res.json();
-
-                if (result.status === 'success' && result.message === 'login_ok') {
-                    localStorage.setItem('baking_lab_auth', 'true');
-                    sessionStorage.setItem('baking_lab_auth', 'true');
-                    hideLoginModal();
-                    updateUIForLoginState();
-                } else {
-                    errDiv.style.display = 'block';
-                    errDiv.textContent = result.message || '登入失敗';
-                }
-            } catch (err) {
-                errDiv.style.display = 'block';
-                errDiv.textContent = '網路錯誤，請稍後再試';
-            }
-
-            btn.disabled = false;
-            btn.textContent = '🔓 登入';
         }
 
         function handleLogout() {
@@ -550,6 +706,68 @@
             }
         });
 
+        // ====== 區塊標題與規格解析工具 (顆數 & 單顆g數) ======
+        function parseSectionTitleSpec(fullTitle) {
+            if (!fullTitle) return { name: '主麵團', count: '', gram: '' };
+            let str = fullTitle.trim();
+            let count = '';
+            let gram = '';
+
+            const countMatch = str.match(/(\d+(?:\.\d+)?)\s*(?:顆|份|個|盒)/);
+            if (countMatch) {
+                count = countMatch[1];
+            }
+
+            const gramMatch = str.match(/(\d+(?:\.\d+)?)\s*g(?:\/(?:顆|份|個|盒))?/i);
+            if (gramMatch) {
+                gram = gramMatch[1];
+            }
+
+            let name = str;
+            name = name.replace(/[-_–—]?\s*\d+(?:\.\d+)?\s*(?:顆|份|個|盒).*/g, '');
+            name = name.replace(/\(.*\)/g, '').replace(/\[.*\]/g, '').trim();
+            if (!name) name = fullTitle.split('-')[0].split('(')[0].trim() || '主麵團';
+
+            return { name, count, gram };
+        }
+
+        function buildSectionTitle(name, count, gram) {
+            let cleanName = (name || '').trim();
+            if (!cleanName) cleanName = '主麵團';
+            let c = (count || '').toString().trim();
+            let g = (gram || '').toString().trim();
+
+            if (c && g) {
+                return `${cleanName}-${c}顆(${g}g/顆)`;
+            } else if (c) {
+                return `${cleanName}-${c}顆`;
+            } else if (g) {
+                return `${cleanName}(${g}g/顆)`;
+            } else {
+                return cleanName;
+            }
+        }
+
+        function updateSectionTotalWeight(sectionId) {
+            const sec = document.getElementById(sectionId);
+            if (!sec) return;
+            const countInput = sec.querySelector('.section-title-count');
+            const gramInput = sec.querySelector('.section-title-gram');
+            const badge = sec.querySelector('.section-total-weight-badge');
+
+            const count = parseFloat(countInput?.value);
+            const gram = parseFloat(gramInput?.value);
+
+            if (badge) {
+                if (!isNaN(count) && count > 0 && !isNaN(gram) && gram > 0) {
+                    const total = (count * gram).toFixed(1);
+                    badge.innerText = `總計 ${total}g`;
+                } else {
+                    badge.innerText = '';
+                }
+            }
+        }
+
         // 新增配方區塊
         function addRecipeSection(containerId, hasBrand, isRequired, title = '主麵團') {
             const container = document.getElementById(containerId);
@@ -558,9 +776,25 @@
             sec.className = 'recipe-section mb-3 border border-2 border-light bg-white rounded p-2 shadow-sm';
             sec.id = sectionId;
 
+            const spec = parseSectionTitleSpec(title);
+            const totalW = (spec.count && spec.gram) ? (parseFloat(spec.count) * parseFloat(spec.gram)).toFixed(1) : '';
+
             sec.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <input type="text" class="form-control form-control-sm section-title-input w-50 fw-bold text-primary" placeholder="區塊名稱 (例如: 主麵團, 內餡)" value="${title}">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                    <div class="d-flex align-items-center gap-1 flex-grow-1 flex-wrap">
+                        <input type="text" class="form-control form-control-sm section-title-name fw-bold text-primary" style="min-width: 120px; max-width: 180px;" placeholder="區塊名稱 (如: 油酥)" value="${spec.name}" oninput="updateSectionTotalWeight('${sectionId}')">
+                        <div class="input-group input-group-sm" style="width: 115px;" title="製作數量 (顆/份)">
+                            <input type="number" step="1" min="1" class="form-control section-title-count text-center" placeholder="顆數" value="${spec.count}" oninput="updateSectionTotalWeight('${sectionId}')">
+                            <span class="input-group-text px-1">顆</span>
+                        </div>
+                        <div class="input-group input-group-sm" style="width: 130px;" title="單顆用量重量 (g/顆)">
+                            <input type="number" step="0.1" min="0" class="form-control section-title-gram text-center" placeholder="單顆克數" value="${spec.gram}" oninput="updateSectionTotalWeight('${sectionId}')">
+                            <span class="input-group-text px-1">g/顆</span>
+                        </div>
+                        <span class="badge bg-light text-dark border ms-1 section-total-weight-badge" id="${sectionId}-weight-badge" title="區塊目標總重量">
+                            ${totalW ? `總計 ${totalW}g` : ''}
+                        </span>
+                    </div>
                     <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 auth-only" onclick="this.closest('.recipe-section').remove()">🗑️ 刪除此區塊</button>
                 </div>
                 <div class="row g-1 mb-1 text-center align-items-end">
@@ -659,7 +893,21 @@
         function compileRecipe(containerId, hasBrand) {
             let recipeString = '';
             document.querySelectorAll(`#${containerId} .recipe-section`).forEach(sec => {
-                const title = sec.querySelector('.section-title-input').value.trim();
+                const nameInput = sec.querySelector('.section-title-name');
+                const countInput = sec.querySelector('.section-title-count');
+                const gramInput = sec.querySelector('.section-title-gram');
+
+                let title = '';
+                if (nameInput) {
+                    const name = nameInput.value.trim();
+                    const count = countInput ? countInput.value.trim() : '';
+                    const gram = gramInput ? gramInput.value.trim() : '';
+                    title = buildSectionTitle(name, count, gram);
+                } else {
+                    const legacyInput = sec.querySelector('.section-title-input');
+                    title = legacyInput ? legacyInput.value.trim() : '';
+                }
+
                 if (title) {
                     recipeString += `## ${title}\n`;
                 }
@@ -777,6 +1025,18 @@
 
         // 用百分比去推算克數
         function calcGramsFromPct(containerId) {
+            const sec = document.getElementById(containerId);
+            let suggestedTotal = '';
+            if (sec) {
+                const countInput = sec.querySelector('.section-title-count');
+                const gramInput = sec.querySelector('.section-title-gram');
+                const count = parseFloat(countInput?.value);
+                const gram = parseFloat(gramInput?.value);
+                if (!isNaN(count) && count > 0 && !isNaN(gram) && gram > 0) {
+                    suggestedTotal = (count * gram).toFixed(1);
+                }
+            }
+
             const rows = document.querySelectorAll(`#${containerId} .recipe-row`);
             let totalPct = 0;
             const pcts = [];
@@ -794,7 +1054,7 @@
 
             if (totalPct === 0) return alert("請先在下方列表中填寫各項食材的烘焙百分比(%)");
 
-            const totalInput = prompt("請輸入「未加耗損」的預期總 g 數：");
+            const totalInput = prompt("請輸入「未加耗損」的預期總 g 數：", suggestedTotal || "");
             if (!totalInput) return;
             const totalUnwasted = parseFloat(totalInput);
             if (isNaN(totalUnwasted) || totalUnwasted <= 0) return alert("請輸入有效的總克數");
@@ -966,32 +1226,307 @@
                 dbRecords = data.records || [];
                 dbPurchases = data.purchases || [];
                 dbOptions = data.options || [];
+                dbOrders = data.orders || [];
 
                 populateDatalists();
                 renderRecordsAccordion();
                 renderPurchases();
+                renderCloudOrders();
                 parseAndRenderRecipe('', 'target-recipe-container', false, true);
             } catch (error) {
                 container.innerHTML = '<p class="text-danger text-center">載入失敗</p>';
             }
         }
 
+        // ====== 👁️ 對照原始基準配方 Modal ======
+        function openBaselineCompareModal() {
+            const currentName = document.getElementById('recipe_name').value.trim();
+            if (!currentName) return alert('請先選擇標的配方');
+
+            const recipe = dbRecipes.find(r => r.recipe_name === currentName);
+            if (!recipe || !recipe.target_recipe) return alert('此配方無原始基準資料');
+
+            const actualRecipeStr = compileRecipe('actual-recipe-container', true);
+            if (!actualRecipeStr) return alert('請先填寫實驗配方內容');
+
+            const parseSecs = (str) => {
+                let secs = {};
+                let curRawTitle = '主麵團';
+
+                str.split('\n').forEach(line => {
+                    if (!line.trim()) return;
+                    if (line.startsWith('## ')) {
+                        curRawTitle = line.replace('## ', '').trim();
+                        return;
+                    }
+                    const parts = line.split(' | ');
+                    let rawName = parts[0] ? parts[0].replace('*', '').trim() : '';
+                    if (!rawName) return;
+
+                    let cleanName = rawName.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
+                    let pct = 0;
+                    let weight = 0;
+                    let brand = '';
+                    parts.forEach(p => {
+                        if (p.includes('%')) pct = parseFloat(p.replace('%', '')) || 0;
+                        else if (p.includes('g') && !p.includes('$') && !p.includes('/')) weight = parseFloat(p.replace('g', '')) || 0;
+                        else if (p.includes('(') && !p.includes('$') && !p.includes('/')) brand = p.replace(/[()]/g, '').trim();
+                    });
+
+                    // 依據正規化後的區塊名稱（如：油酥-30顆(10g/顆) -> 油酥）進行對應歸類
+                    const secSpec = parseSectionTitleSpec(curRawTitle);
+                    const normSecName = secSpec.name || '主麵團';
+
+                    if (!secs[normSecName]) {
+                        secs[normSecName] = {
+                            rawTitles: new Set(),
+                            items: []
+                        };
+                    }
+                    secs[normSecName].rawTitles.add(curRawTitle);
+                    secs[normSecName].items.push({ name: cleanName, rawName, pct, weight, brand });
+                });
+
+                // 若此區塊中食材未標註 %，則根據最大麵粉重 (Base Weight) 自動反推 Baker's %
+                Object.keys(secs).forEach(secName => {
+                    const sec = secs[secName];
+                    const hasAnyPct = sec.items.some(i => i.pct > 0);
+                    if (!hasAnyPct) {
+                        let maxW = sec.items.reduce((max, i) => i.weight > max ? i.weight : max, 0);
+                        if (maxW > 0) {
+                            sec.items.forEach(i => {
+                                i.pct = Math.round((i.weight / maxW) * 1000) / 10;
+                            });
+                        }
+                    }
+                });
+
+                return secs;
+            };
+
+            const targetSecs = parseSecs(recipe.target_recipe);
+            const actualSecs = parseSecs(actualRecipeStr);
+
+            let tablesHtml = '';
+            const allSecNames = [...new Set([...Object.keys(targetSecs), ...Object.keys(actualSecs)])];
+
+            allSecNames.forEach(secName => {
+                const tSec = targetSecs[secName];
+                const aSec = actualSecs[secName];
+
+                const tItems = tSec ? tSec.items : [];
+                const aItems = aSec ? aSec.items : [];
+
+                const tTitle = tSec ? [...tSec.rawTitles].join(', ') : '';
+                const aTitle = aSec ? [...aSec.rawTitles].join(', ') : '';
+                let titleDisplay = secName;
+                if (tTitle || aTitle) {
+                    if (tTitle === aTitle) {
+                        titleDisplay = `🧩 ${tTitle}`;
+                    } else {
+                        titleDisplay = `🧩 ${secName} &nbsp;<span class="fw-normal text-muted small">(基準: ${tTitle || '無'} vs 實驗: ${aTitle || '無'})</span>`;
+                    }
+                } else {
+                    titleDisplay = `🧩 ${secName}`;
+                }
+
+                let rowsHtml = '';
+                // 不分大小寫與空白，按乾淨食材名稱比對
+                const allIngNames = [...new Set([...tItems.map(i => i.name), ...aItems.map(i => i.name)])];
+
+                allIngNames.forEach(ingName => {
+                    const tItem = tItems.find(i => i.name === ingName);
+                    const aItem = aItems.find(i => i.name === ingName);
+
+                    const tPct = tItem ? tItem.pct : 0;
+                    const aPct = aItem ? aItem.pct : 0;
+                    const pctDiff = Math.round((aPct - tPct) * 10) / 10;
+
+                    let diffStr = '相同';
+                    let diffBadgeClass = 'bg-light text-muted';
+
+                    if (!tItem && aItem) {
+                        diffStr = `+${aPct}%p (新增項)`;
+                        diffBadgeClass = 'bg-info-subtle text-info border border-info';
+                    } else if (tItem && !aItem) {
+                        diffStr = `-${tPct}%p (未使用)`;
+                        diffBadgeClass = 'bg-secondary-subtle text-secondary border border-secondary';
+                    } else if (pctDiff > 0) {
+                        diffStr = `+${pctDiff}%p`;
+                        diffBadgeClass = 'bg-danger-subtle text-danger border border-danger';
+                    } else if (pctDiff < 0) {
+                        diffStr = `${pctDiff}%p`;
+                        diffBadgeClass = 'bg-success-subtle text-success border border-success';
+                    }
+
+                    rowsHtml += `
+                        <tr>
+                            <td class="fw-bold">${ingName} ${aItem && aItem.brand ? '<span class="text-muted fw-normal small">(' + aItem.brand + ')</span>' : ''}</td>
+                            <td class="text-end font-monospace text-muted">${tItem ? tPct + '%' : '—'} (${tItem ? tItem.weight + 'g' : '—'})</td>
+                            <td class="text-end font-monospace fw-bold text-primary">${aItem ? aPct + '%' : '—'} (${aItem ? aItem.weight + 'g' : '—'})</td>
+                            <td class="text-end"><span class="badge ${diffBadgeClass}">${diffStr}</span></td>
+                        </tr>
+                    `;
+                });
+
+                tablesHtml += `
+                    <div class="card mb-3 border shadow-sm">
+                        <div class="card-header bg-light py-1 px-3 fw-bold text-secondary">
+                            ${titleDisplay}
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-hover mb-0" style="font-size:0.85rem;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>食材</th>
+                                        <th class="text-end">原始基準比例 (%/g)</th>
+                                        <th class="text-end">本次實驗比例 (%/g)</th>
+                                        <th class="text-end">比例差異 (%p)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rowsHtml}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const bodyEl = document.getElementById('baselineCompareModalBody');
+            if (bodyEl) bodyEl.innerHTML = tablesHtml;
+
+            const modalEl = document.getElementById('baselineCompareModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        }
+
+        // ====== 🌟 實驗結果升格為經典配方版本 ======
+        async function promoteRecordToRecipeVersion(recordId) {
+            const record = recordId ? dbRecords.find(r => String(r.id) === String(recordId)) : null;
+            let currentRecipeName = '';
+            let actualRecipeText = '';
+            let defaultPurpose = '';
+            let defaultTempUp = '';
+            let defaultTempDown = '';
+            let defaultTime = '';
+
+            if (record) {
+                currentRecipeName = record.recipe_name || '';
+                actualRecipeText = record.actual_recipe || '';
+                defaultPurpose = record.experiment_purpose || '';
+                defaultTempUp = record.actual_temp_up || '';
+                defaultTempDown = record.actual_temp_down || '';
+                defaultTime = record.actual_time || '';
+            } else {
+                currentRecipeName = document.getElementById('recipe_name').value.trim();
+                actualRecipeText = compileRecipe('actual-recipe-container', true);
+                defaultPurpose = document.getElementById('experiment_purpose').value.trim();
+                defaultTempUp = document.getElementById('actual_temp_up').value;
+                defaultTempDown = document.getElementById('actual_temp_down').value;
+                defaultTime = document.getElementById('actual_time').value;
+            }
+
+            if (!currentRecipeName || !actualRecipeText) {
+                return alert('⚠️ 查無可升格之實驗數據，請先填寫實驗配方內容！');
+            }
+
+            const { mainName } = parseRecipeFullName(currentRecipeName);
+            const suggestedVersion = defaultPurpose ? `${defaultPurpose}版` : '精選新版本';
+            const versionName = prompt(`🌟 請輸入升格後的【經典配方版本名稱】(主品項: ${mainName})：`, suggestedVersion);
+            if (!versionName || !versionName.trim()) return;
+
+            const fullRecipeName = buildRecipeFullName(mainName, versionName.trim());
+
+            // 解析實驗配方的克數並反推 Baker's % 比例
+            let parsedSections = [];
+            let currentSec = { title: '主麵團', items: [] };
+
+            actualRecipeText.split('\n').forEach(line => {
+                if (!line.trim()) return;
+                if (line.startsWith('## ')) {
+                    if (currentSec.items.length > 0) parsedSections.push(currentSec);
+                    currentSec = { title: line.replace('## ', '').trim(), items: [] };
+                    return;
+                }
+                const parts = line.split(' | ');
+                let name = parts[0] ? parts[0].replace('*', '').trim() : '';
+                let weight = 0;
+                let brand = '';
+                parts.forEach(p => {
+                    if (p.includes('g') && !p.includes('$') && !p.includes('/')) weight = parseFloat(p.replace('g', '')) || 0;
+                    if (p.includes('(') && !p.includes('$') && !p.includes('/')) brand = p.replace(/[()]/g, '');
+                });
+                if (name && weight > 0) {
+                    currentSec.items.push({ name, weight, brand });
+                }
+            });
+            if (currentSec.items.length > 0) parsedSections.push(currentSec);
+
+            if (parsedSections.length === 0) return alert('⚠️ 解析實驗食材克數失敗！');
+
+            // 為每個區塊計算 Baker's %
+            let compiledLines = [];
+            parsedSections.forEach(sec => {
+                compiledLines.push(`## ${sec.title}`);
+                let maxWeight = sec.items.reduce((max, item) => item.weight > max ? item.weight : max, 0);
+
+                sec.items.forEach(item => {
+                    let pct = maxWeight > 0 ? (Math.round((item.weight / maxWeight) * 1000) / 10) : 100;
+                    let brandStr = item.brand ? ` | (${item.brand})` : '';
+                    compiledLines.push(`${item.name} | ${pct}% | ${item.weight}g${brandStr}`);
+                });
+            });
+
+            const targetRecipeStr = compiledLines.join('\n');
+
+            const payload = {
+                action: 'save_recipe',
+                recipe_name: fullRecipeName,
+                target_recipe: targetRecipeStr,
+                target_temp_up: defaultTempUp,
+                target_temp_down: defaultTempDown,
+                target_time: defaultTime,
+                target_steps: `根據實驗 [${defaultPurpose}] 升格成經典配方版本 (${new Date().toLocaleDateString('zh-TW')})`
+            };
+
+            try {
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const existingIndex = dbRecipes.findIndex(r => r.recipe_name === fullRecipeName);
+                if (existingIndex > -1) { dbRecipes[existingIndex] = payload; }
+                else { dbRecipes.unshift(payload); }
+
+                alert(`🎉 成功將實驗升格並建立經典配方新版本：【${fullRecipeName}】！`);
+                renderRecordsAccordion();
+                loadRecipeDetails(fullRecipeName);
+            } catch (err) {
+                alert('⚠️ 雲端寫入失敗: ' + err.message);
+            }
+        }
+
         // 選擇配方後，帶入原始配方並顯示歷史紀錄選項
-        function loadRecipeDetails(recipeName) {
-            const recipe = dbRecipes.find(r => r.recipe_name === recipeName);
+        function loadRecipeDetails(fullName) {
+            const recipe = dbRecipes.find(r => r.recipe_name === fullName);
             if (recipe) {
+                const { mainName, versionName } = parseRecipeFullName(fullName);
+                document.getElementById('recipe_main_name').value = mainName;
+                document.getElementById('recipe_version_name').value = versionName;
+                document.getElementById('recipe_name').value = fullName;
+
                 parseAndRenderRecipe(recipe.target_recipe, 'target-recipe-container', false, true);
                 document.getElementById('target_temp_up').value = recipe.target_temp_up || '';
                 document.getElementById('target_temp_down').value = recipe.target_temp_down || '';
                 document.getElementById('target_time').value = recipe.target_time || '';
                 document.getElementById('target_steps').value = recipe.target_steps || '';
 
-                // 找出歷史紀錄
-                const historyRecords = dbRecords.filter(r => r.recipe_name === recipeName);
+                // 找出該主品項下的所有歷史紀錄
+                const historyRecords = dbRecords.filter(r => {
+                    const rMain = parseRecipeFullName(r.recipe_name).mainName;
+                    return rMain === mainName || r.recipe_name === fullName;
+                });
                 const listContainer = document.getElementById('historical-records-list');
                 listContainer.innerHTML = '';
 
-                // 統一格式化日期顯示
                 const formatDateStr = (dateStr) => {
                     if (!dateStr) return '';
                     const d = new Date(dateStr);
@@ -1003,13 +1538,19 @@
                 if (historyRecords.length > 0) {
                     historyRecords.forEach(r => {
                         const btn = document.createElement('button');
-                        btn.className = 'list-group-item list-group-item-action py-2';
-                        btn.innerHTML = `<strong>🕒 ${formatDateStr(r.date)}</strong>${r.experiment_purpose ? ' &nbsp;<span class="badge bg-info text-dark">' + r.experiment_purpose + '</span>' : ''}`;
+                        btn.className = 'list-group-item list-group-item-action py-2 d-flex justify-content-between align-items-center';
+                        btn.innerHTML = `
+                            <div>
+                                <strong>🕒 ${formatDateStr(r.date)}</strong>
+                                ${r.experiment_purpose ? ' &nbsp;<span class="badge bg-info text-dark">' + r.experiment_purpose + '</span>' : ''}
+                            </div>
+                            <span class="badge bg-light text-dark border">${parseRecipeFullName(r.recipe_name).versionName}</span>
+                        `;
                         btn.onclick = () => loadHistoricalRecord(r);
                         listContainer.appendChild(btn);
                     });
                 } else {
-                    listContainer.innerHTML = '<div class="text-muted small p-2">此配方目前尚無實驗紀錄。</div>';
+                    listContainer.innerHTML = '<div class="text-muted small p-2">此品項目前尚無實驗紀錄。</div>';
                 }
 
                 document.getElementById('record-selection-area').style.display = 'block';
@@ -1017,156 +1558,28 @@
             }
         }
 
-        // 開始新實驗
-        function startNewRecord() {
-            currentRecordId = null;
-            document.getElementById('recordForm').style.display = 'block';
-            document.getElementById('recordForm').reset();
-            document.getElementById('actual-recipe-container').innerHTML = '';
-            parseAndRenderRecipe('', 'actual-recipe-container', true, false);
-
-            // 重置成本明細
-            currentCalculatedCostStr = '';
-            document.getElementById('costResult').style.display = 'none';
-            document.getElementById('costResult').innerHTML = '';
-
-            document.getElementById('record-mode-badge').innerText = '新實驗';
-            document.getElementById('record-mode-badge').className = 'badge bg-success';
-            document.getElementById('btnSaveRecord').innerText = '儲存全新實驗紀錄';
-        }
-
-        // 載入歷史紀錄進行更新
-        function loadHistoricalRecord(record) {
-            currentRecordId = record.id;
-            document.getElementById('recordForm').style.display = 'block';
-
-            parseAndRenderRecipe(record.actual_recipe, 'actual-recipe-container', true, false);
-            document.getElementById('actual_temp_up').value = record.actual_temp_up || '';
-            document.getElementById('actual_temp_down').value = record.actual_temp_down || '';
-            document.getElementById('actual_time').value = record.actual_time || '';
-            document.getElementById('oven_spec').value = record.oven_spec || '';
-            document.getElementById('experiment_purpose').value = record.experiment_purpose || '';
-            document.getElementById('yield_amount').value = record.yield_amount || '';
-            document.getElementById('result_notes').value = record.result_notes || '';
-
-            document.getElementById('record-mode-badge').innerText = '編輯模式';
-            document.getElementById('record-mode-badge').className = 'badge bg-warning text-dark';
-            document.getElementById('btnSaveRecord').innerText = '💾 更新覆蓋此筆紀錄';
-
-            // 處理並更新成本明細區塊
-            const resultDiv = document.getElementById('costResult');
-            if (record.total_cost && record.actual_recipe) {
-                let tableRows = '';
-                record.actual_recipe.split('\n').forEach(line => {
-                    if (!line.trim()) return;
-                    const parts = line.split(' | ');
-                    let name = parts[0] ? parts[0].replace('*', '').trim() : '';
-                    let weight = '';
-                    let priceTag = '';
-                    let brand = '';
-
-                    parts.forEach(p => {
-                        if (p.includes('g') && !p.includes('$') && !p.includes('/')) weight = p.replace('g', '');
-                        if (p.includes('(') && !p.includes('$') && !p.includes('/')) brand = p.replace(/[()]/g, '');
-                        if (p.includes('$') || p.includes('/')) priceTag = p;
-                    });
-
-                    const label = brand ? `${name} (${brand})` : name;
-
-                    if (name && weight) {
-                        tableRows += `
-                            <tr>
-                                <td>${label}</td>
-                                <td class="text-end">${weight}g</td>
-                                <td class="text-end text-muted small">${priceTag || '—'}</td>
-                            </tr>`;
-                    }
-                });
-
-                resultDiv.style.display = 'block';
-                resultDiv.innerHTML = `
-                    <div class="p-2 border rounded bg-white mt-3" style="background-color: #fdfdfd;">
-                        <div class="section-title mb-2 text-muted">💰 當時紀錄之食材成本明細 (防呆檢視)</div>
-                        <table class="table table-sm mb-2" style="font-size:0.85rem;">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>食材</th>
-                                    <th class="text-end">用量</th>
-                                    <th class="text-end">單價參考</th>
-                                </tr>
-                            </thead>
-                            <tbody>${tableRows}</tbody>
-                        </table>
-                        <div class="d-flex justify-content-between align-items-center pt-1 border-top">
-                            <span class="fw-bold text-muted">當時紀錄之總成本</span>
-                            <span class="fw-bold text-success fs-6">$${record.total_cost}</span>
-                        </div>
-                        <div class="mt-2 text-end">
-                            <button type="button" class="btn btn-sm btn-outline-primary w-100 auth-only" onclick="openPurchaseModal()">🛠️ 開啟購買紀錄管理 (修正價錢/紀錄)</button>
-                        </div>
-                    </div>`;
-                currentCalculatedCostStr = record.total_cost; // 保留讓未來直接存檔時這數字不會憑空消失
-            } else {
-                resultDiv.style.display = 'none';
-                resultDiv.innerHTML = '';
-                currentCalculatedCostStr = '';
-            }
-        }
-
-        // 儲存原始配方 (Recipes)
+        // 儲存原始配方 (Master Recipe)
         async function saveOriginalRecipe() {
-            const name = document.getElementById('recipe_name').value.trim();
-            if (!name) return alert('請填寫品項名稱');
+            updateCombinedRecipeName();
+            const recipeName = document.getElementById('recipe_name').value.trim();
+            if (!recipeName) return alert('請先填寫主品項名稱');
+
+            const targetRecipeStr = compileRecipe('target-recipe-container', false);
+            if (!targetRecipeStr) return alert('請填寫標的食譜內容');
 
             const btn = document.getElementById('btnSaveRecipe');
-            btn.disabled = true; btn.innerText = '儲存中...';
+            btn.disabled = true;
+            const originalText = btn.innerText;
+            btn.innerText = '儲存中...';
 
             const payload = {
                 action: 'save_recipe',
-                recipe_name: name,
-                target_recipe: compileRecipe('target-recipe-container', false),
+                recipe_name: recipeName,
+                target_recipe: targetRecipeStr,
                 target_temp_up: document.getElementById('target_temp_up').value,
                 target_temp_down: document.getElementById('target_temp_down').value,
                 target_time: document.getElementById('target_time').value,
-                target_steps: document.getElementById('target_steps').value // 新增製作步驟
-            };
-
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-
-            const existingIndex = dbRecipes.findIndex(r => r.recipe_name === name);
-            if (existingIndex > -1) { dbRecipes[existingIndex] = payload; }
-            else { dbRecipes.unshift(payload); }
-
-            alert('原始配方已更新！');
-            btn.disabled = false; btn.innerText = '💾 建立/更新原始配方至資料庫';
-
-            // 如果是新配方，儲存後顯示實驗選擇區
-            loadRecipeDetails(name);
-        }
-
-        // 儲存/更新實驗紀錄 (Records)
-        document.getElementById('recordForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const name = document.getElementById('recipe_name').value.trim();
-            if (!name) return alert('請先確認上方品項名稱');
-
-            const btn = document.getElementById('btnSaveRecord');
-            btn.disabled = true; btn.innerText = '雲端寫入中...';
-
-            const payload = {
-                action: currentRecordId ? 'update_record' : 'save_record',
-                id: currentRecordId || Date.now().toString(),
-                date: currentRecordId ? undefined : new Date().toLocaleString('zh-TW', { hour12: false }), // 更新時不覆蓋原時間
-                recipe_name: name,
-                actual_recipe: compileRecipe('actual-recipe-container', true),
-                actual_temp_up: document.getElementById('actual_temp_up').value,
-                actual_temp_down: document.getElementById('actual_temp_down').value,
-                actual_time: document.getElementById('actual_time').value,
-                oven_spec: document.getElementById('oven_spec').value,
-                experiment_purpose: document.getElementById('experiment_purpose').value,
-                yield_amount: document.getElementById('yield_amount').value,
-                result_notes: document.getElementById('result_notes').value,
-                total_cost: currentCalculatedCostStr
+                target_steps: document.getElementById('target_steps').value
             };
 
             try {
@@ -1174,64 +1587,87 @@
                 const result = await res.json();
                 if (result.status !== 'success') {
                     alert('⚠️ 儲存失敗：' + (result.message || '未知錯誤'));
-                    btn.disabled = false;
+                    btn.disabled = false; btn.innerText = originalText;
                     return;
                 }
+
+                const idx = dbRecipes.findIndex(r => r.recipe_name === recipeName);
+                if (idx > -1) {
+                    dbRecipes[idx] = payload;
+                } else {
+                    dbRecipes.unshift(payload);
+                }
+
+                alert(`🎉 原始配方【${recipeName}】已成功儲存至雲端！`);
+                renderRecordsAccordion();
+                loadRecipeDetails(recipeName);
             } catch (err) {
                 alert('⚠️ 網路錯誤：' + err.message);
+            } finally {
                 btn.disabled = false;
-                return;
+                btn.innerText = originalText;
             }
-
-            if (currentRecordId) {
-                const index = dbRecords.findIndex(r => r.id == currentRecordId);
-                if (index > -1) {
-                    payload.date = dbRecords[index].date;
-                    dbRecords[index] = payload;
-                }
-                alert('歷史紀錄已成功更新覆蓋！');
-            } else {
-                dbRecords.unshift(payload);
-                alert('新實驗紀錄已儲存！');
-            }
-
-            renderRecordsAccordion();
-            loadRecipeDetails(name);
-            document.getElementById('recordForm').style.display = 'none';
-
-            btn.disabled = false;
-        });
-
-        // 從配方字串計算成本（總覽庫用） -> 已移除，改由儲存時計算
-
-        // 總覽庫點擊紀錄卡片，啟動編輯
-        function openRecordFromAccordion(recordId) {
-            const r = dbRecords.find(x => String(x.id) === String(recordId));
-            if (!r) return;
-
-            // 1. 填入品項名稱並載入原配方設定
-            document.getElementById('recipe_name').value = r.recipe_name;
-            loadRecipeDetails(r.recipe_name);
-
-            // 2. 將此紀錄載入表單供編輯
-            loadHistoricalRecord(r);
-
-            // 3. 畫面上捲到表單方便編輯
-            setTimeout(() => {
-                const formElement = document.getElementById('recordForm');
-                if (formElement) {
-                    const y = formElement.getBoundingClientRect().top + window.scrollY - 20; // 稍微預留頂部空間
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                }
-            }, 100);
         }
 
-        // 渲染手風琴紀錄 (加入製作步驟顯示)
+        // 開啟全新實驗紀錄表單
+        function startNewRecord() {
+            currentRecordId = null;
+            document.getElementById('recordForm').style.display = 'block';
+            document.getElementById('recordForm').reset();
+            document.getElementById('actual-recipe-container').innerHTML = '';
+            parseAndRenderRecipe('', 'actual-recipe-container', true, false);
+
+            const resultDiv = document.getElementById('costResult');
+            if (resultDiv) resultDiv.style.display = 'none';
+            currentCalculatedCostStr = '';
+
+            const saveBtn = document.getElementById('btnSaveRecord');
+            if (saveBtn) saveBtn.innerText = '儲存實驗紀錄';
+
+            copyOriginalToActual();
+            document.getElementById('recordForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 從手風琴載入實驗紀錄至編輯表單
+        function openRecordFromAccordion(recordId) {
+            const record = dbRecords.find(r => String(r.id) === String(recordId));
+            if (!record) return alert('找不到該筆實驗紀錄');
+
+            loadRecipeDetails(record.recipe_name);
+            loadHistoricalRecord(record);
+        }
+
+        // 載入指定歷史實驗紀錄至表單
+        function loadHistoricalRecord(record) {
+            if (!record) return;
+            currentRecordId = record.id;
+
+            document.getElementById('recordForm').style.display = 'block';
+            document.getElementById('experiment_purpose').value = record.experiment_purpose || '試做';
+            document.getElementById('actual_temp_up').value = record.actual_temp_up || '';
+            document.getElementById('actual_temp_down').value = record.actual_temp_down || '';
+            document.getElementById('actual_time').value = record.actual_time || '';
+            document.getElementById('oven_spec').value = record.oven_spec || '';
+            document.getElementById('yield_amount').value = record.yield_amount || '';
+            document.getElementById('result_notes').value = record.result_notes || '';
+
+            parseAndRenderRecipe(record.actual_recipe || '', 'actual-recipe-container', true, false);
+
+            const resultDiv = document.getElementById('costResult');
+            if (resultDiv) resultDiv.style.display = 'none';
+            currentCalculatedCostStr = record.total_cost || '';
+
+            const saveBtn = document.getElementById('btnSaveRecord');
+            if (saveBtn) saveBtn.innerText = '💾 更新覆蓋此筆實驗紀錄';
+
+            document.getElementById('recordForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 渲染手風琴紀錄 (依主品項分組，呈現版本標籤與升格按鈕)
         function renderRecordsAccordion() {
             const container = document.getElementById('recordsContainer');
             container.innerHTML = '';
 
-            // 統一格式化日期顯示（給總覽庫用）
             const formatDateStr = (dateStr) => {
                 if (!dateStr) return '';
                 const d = new Date(dateStr);
@@ -1240,32 +1676,51 @@
                 return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
             };
 
-            const grouped = dbRecords.reduce((acc, curr) => {
-                if (!acc[curr.recipe_name]) acc[curr.recipe_name] = [];
-                acc[curr.recipe_name].push(curr);
-                return acc;
-            }, {});
+            // 按 主品項 (mainName) 進行大分類
+            const mainRecipeGroups = {};
+            dbRecipes.forEach(r => {
+                const { mainName } = parseRecipeFullName(r.recipe_name);
+                if (!mainRecipeGroups[mainName]) mainRecipeGroups[mainName] = { versions: [], records: [] };
+                mainRecipeGroups[mainName].versions.push(r);
+            });
 
-            Object.keys(grouped).forEach((recipeName, index) => {
-                const records = grouped[recipeName];
+            dbRecords.forEach(r => {
+                const { mainName } = parseRecipeFullName(r.recipe_name);
+                if (!mainRecipeGroups[mainName]) mainRecipeGroups[mainName] = { versions: [], records: [] };
+                mainRecipeGroups[mainName].records.push(r);
+            });
+
+            Object.keys(mainRecipeGroups).forEach((mainName, index) => {
+                const group = mainRecipeGroups[mainName];
                 const accId = `collapse-${index}`;
                 const formatText = (text) => (text || '').toString().replace(/\n/g, '<br>');
 
-                // 找出這組紀錄對應的原始配方，以便顯示步驟
-                const recipeData = dbRecipes.find(r => r.recipe_name === recipeName);
-                let stepsHTML = '';
-                if (recipeData && recipeData.target_steps) {
-                    stepsHTML = `<div class="mb-3 p-2 bg-white rounded border small text-muted"><strong>📖 製作步驟：</strong><br>${formatText(recipeData.target_steps)}</div>`;
-                }
+                // 版本標籤按鈕列
+                let versionBadgesHtml = group.versions.map(v => {
+                    const { versionName } = parseRecipeFullName(v.recipe_name);
+                    return `<button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 me-1 mb-1" onclick="loadRecipeDetails('${v.recipe_name}')">📖 ${versionName}</button>`;
+                }).join('');
 
-                let recordsHTML = records.map(r => {
+                let recordsHTML = group.records.map(r => {
                     const isLoggedIn = checkAuth();
+                    const { versionName } = parseRecipeFullName(r.recipe_name);
+
                     return `
                     <div class="record-card p-3 mb-3 border rounded shadow-sm position-relative" style="${isLoggedIn ? 'cursor: pointer;' : ''}" ${isLoggedIn ? `onclick="openRecordFromAccordion('${r.id}')"` : ''} title="${isLoggedIn ? '點擊載入此紀錄' : ''}">
-                        ${isLoggedIn ? '<span class="position-absolute top-0 end-0 p-2 text-primary small mt-1 me-1"><i class="fw-bold">✏️ 編輯</i></span>' : ''}
-                        <p class="text-secondary fw-bold small mb-2">🕒 紀錄時間: ${formatDateStr(r.date)}</p>
-                        ${r.experiment_purpose ? '<p class="mb-2 small"><strong>🎯 目的：</strong> <span class="badge bg-info text-dark">' + r.experiment_purpose + '</span></p>' : ''}
-                        <div class="bg-light p-2 rounded mb-2 small" style="font-family: monospace;"><strong>🧪 實驗配方：</strong><br>${formatText(r.actual_recipe)}</div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="text-secondary fw-bold small me-2">🕒 ${formatDateStr(r.date)}</span>
+                                <span class="badge bg-secondary">${versionName}</span>
+                                ${r.experiment_purpose ? '<span class="badge bg-info text-dark ms-1">' + r.experiment_purpose + '</span>' : ''}
+                            </div>
+                            ${isLoggedIn ? `
+                            <div>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-primary me-2 fw-bold" onclick="event.stopPropagation(); openRecordFromAccordion('${r.id}')" style="font-size:0.8rem; text-decoration:none;">✏️ 載入編輯</button>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-warning fw-bold" onclick="event.stopPropagation(); promoteRecordToRecipeVersion('${r.id}')" style="font-size:0.8rem; text-decoration:none;">🌟 升格為經典新版本</button>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="bg-light p-2 rounded mb-2 small" style="font-family: monospace;"><strong>🧪 實驗實際克數：</strong><br>${formatText(r.actual_recipe)}</div>
                         <div class="row mb-2 small">
                             <div class="col-4"><strong>上火:</strong> <span class="text-danger">${r.actual_temp_up ? r.actual_temp_up + '<sup>o</sup>C' : '-'}</span></div>
                             <div class="col-4"><strong>下火:</strong> <span class="text-danger">${r.actual_temp_down ? r.actual_temp_down + '<sup>o</sup>C' : '-'}</span></div>
@@ -1285,13 +1740,16 @@
                 item.innerHTML = `
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed rounded fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#${accId}">
-                        📁 ${recipeName} <span class="badge bg-secondary ms-2">${records.length} 筆實驗</span>
+                        📁 ${mainName} <span class="badge bg-primary ms-2">${group.versions.length} 個配方版本</span> <span class="badge bg-secondary ms-1">${group.records.length} 筆實驗</span>
                     </button>
                 </h2>
                 <div id="${accId}" class="accordion-collapse collapse" data-bs-parent="#recordsContainer">
                     <div class="accordion-body bg-light">
-                        ${stepsHTML}
-                        ${recordsHTML}
+                        <div class="mb-3 p-2 bg-white rounded border">
+                            <span class="fw-bold small text-muted me-2">經典配方版本庫：</span>
+                            <div class="mt-1">${versionBadgesHtml || '<span class="text-muted small">尚無版本</span>'}</div>
+                        </div>
+                        ${recordsHTML || '<div class="text-muted small p-2">尚無實驗紀錄</div>'}
                     </div>
                 </div>
             `;
@@ -1381,10 +1839,79 @@
             };
         }
 
-        // 已登入時，若 checkSession 尚未觸發 loadData，補呼叫一次
-        if (checkAuth() && dbRecipes.length === 0) {
-            loadData();
-        }
+        // 頁面初始化
+        updateUIForLoginState();
+        loadData();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const recordForm = document.getElementById('recordForm');
+            if (recordForm) {
+                recordForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+
+                    const recipeName = document.getElementById('recipe_name').value.trim();
+                    if (!recipeName) return alert('請先選擇或輸入配方名稱');
+
+                    const actualRecipe = compileRecipe('actual-recipe-container', true);
+                    if (!actualRecipe) return alert('請填寫實驗配方內容');
+
+                    const btn = document.getElementById('btnSaveRecord');
+                    btn.disabled = true;
+                    const originalText = btn.innerText;
+                    btn.innerText = '儲存中...';
+
+                    const isUpdate = !!currentRecordId;
+                    const recordId = isUpdate ? String(currentRecordId) : Date.now().toString();
+                    const dateStr = new Date().toLocaleString('zh-TW', { hour12: false });
+
+                    const payload = {
+                        action: isUpdate ? 'update_record' : 'save_record',
+                        id: recordId,
+                        date: dateStr,
+                        recipe_name: recipeName,
+                        actual_recipe: actualRecipe,
+                        actual_temp_up: document.getElementById('actual_temp_up').value,
+                        actual_temp_down: document.getElementById('actual_temp_down').value,
+                        actual_time: document.getElementById('actual_time').value,
+                        experiment_purpose: document.getElementById('experiment_purpose').value,
+                        yield_amount: document.getElementById('yield_amount').value,
+                        result_notes: document.getElementById('result_notes').value,
+                        total_cost: currentCalculatedCostStr || '',
+                        oven_spec: document.getElementById('oven_spec').value
+                    };
+
+                    try {
+                        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                        const result = await res.json();
+                        if (result.status !== 'success') {
+                            alert('⚠️ 儲存失敗：' + (result.message || '未知錯誤'));
+                            btn.disabled = false;
+                            btn.innerText = originalText;
+                            return;
+                        }
+
+                        if (isUpdate) {
+                            const idx = dbRecords.findIndex(r => String(r.id) === String(recordId));
+                            if (idx > -1) {
+                                dbRecords[idx] = { ...dbRecords[idx], ...payload };
+                            }
+                            alert('🎉 實驗紀錄已成功更新覆蓋！');
+                        } else {
+                            dbRecords.unshift(payload);
+                            alert('🎉 新實驗紀錄已成功儲存！');
+                        }
+
+                        currentRecordId = null;
+                        btn.innerText = '儲存實驗紀錄';
+                        renderRecordsAccordion();
+                    } catch (err) {
+                        alert('⚠️ 網路錯誤：' + err.message);
+                    } finally {
+                        btn.disabled = false;
+                    }
+                });
+            }
+        });
 
         // 計算食材成本
         async function calculateCost(btn) {
@@ -1700,6 +2227,798 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        // ====== 剩餘食材回推計算機邏輯 ======
+        function openRemainingScaleModal(containerId) {
+            currentRemainingTargetContainer = containerId;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            currentRemainingParsedRows = [];
+            let sectionTitle = '主麵團';
+
+            const sections = container.querySelectorAll('.recipe-section');
+            sections.forEach(sec => {
+                const secTitleInput = sec.querySelector('.section-title-input');
+                if (secTitleInput && secTitleInput.value.trim()) {
+                    sectionTitle = secTitleInput.value.trim();
+                }
+                const rows = sec.querySelectorAll('.recipe-row');
+                rows.forEach(r => {
+                    const ingName = r.querySelector('.ing-name')?.value.trim() || '';
+                    const ingPct = parseFloat(r.querySelector('.ing-pct')?.value) || 0;
+                    const ingWeight = parseFloat(r.querySelector('.ing-weight')?.value) || 0;
+                    const ingBrand = r.querySelector('.ing-brand')?.value.trim() || '';
+                    if (ingName && ingWeight > 0) {
+                        currentRemainingParsedRows.push({
+                            sectionTitle: sectionTitle,
+                            name: ingName,
+                            pct: ingPct,
+                            baseWeight: ingWeight,
+                            brand: ingBrand,
+                            rowElement: r
+                        });
+                    }
+                });
+            });
+
+            if (currentRemainingParsedRows.length === 0) {
+                alert('請先在配方表單中填寫至少一項食材的名稱與克數 (g)！');
+                return;
+            }
+
+            const listContainer = document.getElementById('remainingScaleInputContainer');
+            listContainer.innerHTML = `
+                <table class="table table-sm align-middle mb-0" style="font-size:0.85rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>區塊 / 食材</th>
+                            <th class="text-end">原配方克數 (g)</th>
+                            <th style="width: 40%;">現有剩餘克數 (g)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${currentRemainingParsedRows.map((item, idx) => `
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary me-1" style="font-size:0.7rem;">${item.sectionTitle}</span>
+                                    <strong>${item.name}</strong> ${item.brand ? '<small class="text-muted">(' + item.brand + ')</small>' : ''}
+                                </td>
+                                <td class="text-end fw-bold text-secondary">${item.baseWeight}g</td>
+                                <td>
+                                    <input type="number" step="0.1" class="form-control form-control-sm rem-input" id="rem_input_${idx}" placeholder="填入剩餘g數" oninput="calculateRemainingScale()">
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('remainingScaleResultArea').style.display = 'none';
+            document.getElementById('remainingScaleResultArea').innerHTML = '';
+            document.getElementById('btnApplyRemainingScale').style.display = 'none';
+
+            const modalEl = document.getElementById('remainingScaleModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        }
+
+        function calculateRemainingScale() {
+            const baseYieldNum = parseFloat(document.getElementById('rem_base_yield').value) || 0;
+            const yieldUnit = document.getElementById('rem_yield_unit').value.trim() || '份';
+
+            let enteredItems = [];
+            currentRemainingParsedRows.forEach((item, idx) => {
+                const inputEl = document.getElementById(`rem_input_${idx}`);
+                if (inputEl && inputEl.value.trim() !== '') {
+                    const remVal = parseFloat(inputEl.value);
+                    if (!isNaN(remVal) && remVal >= 0) {
+                        const scale = remVal / item.baseWeight;
+                        enteredItems.push({
+                            index: idx,
+                            name: item.name,
+                            sectionTitle: item.sectionTitle,
+                            baseWeight: item.baseWeight,
+                            remWeight: remVal,
+                            scale: scale
+                        });
+                    }
+                }
+            });
+
+            const resultDiv = document.getElementById('remainingScaleResultArea');
+            const applyBtn = document.getElementById('btnApplyRemainingScale');
+
+            if (enteredItems.length === 0) {
+                resultDiv.style.display = 'none';
+                resultDiv.innerHTML = '';
+                applyBtn.style.display = 'none';
+                return;
+            }
+
+            const minScale = Math.min(...enteredItems.map(i => i.scale));
+            const bottleneckItems = enteredItems.filter(i => Math.abs(i.scale - minScale) < 0.0001);
+
+            currentRemainingScaledRows = currentRemainingParsedRows.map(item => {
+                const scaled = Math.round(item.baseWeight * minScale * 10) / 10;
+                return {
+                    ...item,
+                    scaledWeight: scaled
+                };
+            });
+
+            const estimatedYieldStr = baseYieldNum > 0 ? (Math.round(baseYieldNum * minScale * 10) / 10) : '—';
+            const scalePctStr = (minScale * 100).toFixed(1) + '%';
+            const scaleFactorStr = minScale.toFixed(2) + 'x';
+
+            let tableRowsHtml = currentRemainingScaledRows.map(item => `
+                <tr>
+                    <td><span class="badge bg-secondary me-1" style="font-size:0.7rem;">${item.sectionTitle}</span>${item.name}</td>
+                    <td class="text-end text-muted">${item.baseWeight}g</td>
+                    <td class="text-end fw-bold text-primary">${item.scaledWeight}g</td>
+                </tr>
+            `).join('');
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                    <div>
+                        <span class="badge bg-danger fs-6 me-2">⚠️ 瓶頸食材: ${bottleneckItems.map(b => b.name + ' (剩' + b.remWeight + 'g)').join(', ')}</span>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-primary fs-6">${scalePctStr} (${scaleFactorStr})</span>
+                    </div>
+                </div>
+                ${baseYieldNum > 0 ? `<div class="mb-3 text-success fw-bold fs-6">🎉 預估最高可產出成品數量：<span class="fs-5">${estimatedYieldStr}</span> ${yieldUnit}</div>` : ''}
+                <div class="section-title text-muted mb-2">📋 縮放後全套食材用量對照表</div>
+                <table class="table table-sm mb-0" style="font-size:0.85rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>食材區塊與名稱</th>
+                            <th class="text-end">原始用量</th>
+                            <th class="text-end">回推可用用量</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRowsHtml}</tbody>
+                </table>
+            `;
+
+            applyBtn.style.display = 'inline-block';
+        }
+
+        function applyRemainingScaleToRecipe() {
+            if (!currentRemainingScaledRows || currentRemainingScaledRows.length === 0) return;
+
+            currentRemainingScaledRows.forEach(item => {
+                if (item.rowElement) {
+                    const weightInput = item.rowElement.querySelector('.ing-weight');
+                    if (weightInput) {
+                        weightInput.value = item.scaledWeight;
+                    }
+                }
+            });
+
+            const modalEl = document.getElementById('remainingScaleModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+
+            alert('✅ 已成功將回推縮放後的食材克數套用至配方表單！');
+        }
+
+        // ====== 訂單需求與多區塊材料反推計算機邏輯 ======
+        function openOrderModal() {
+            const select = document.getElementById('order_recipe_select');
+            select.innerHTML = '<option value="">-- 請選擇配方 --</option>';
+            dbRecipes.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.recipe_name;
+                opt.textContent = r.recipe_name;
+                select.appendChild(opt);
+            });
+
+            const currentName = document.getElementById('recipe_name').value.trim();
+            if (currentName && dbRecipes.some(r => r.recipe_name === currentName)) {
+                select.value = currentName;
+            }
+
+            currentOrderId = null;
+            document.getElementById('order-form-title').innerText = '📝 設定訂單製作數量與每顆克數';
+            document.getElementById('order_name_input').value = '';
+            document.getElementById('order_note_input').value = '';
+            document.getElementById('order_target_count').value = '10';
+            document.getElementById('order_unit_name').value = '顆';
+            const badgeEl = document.getElementById('order_unit_badge');
+            if (badgeEl) badgeEl.innerText = '顆';
+            document.getElementById('btnSaveOrder').innerText = '💾 儲存訂單至雲端 Orders Sheet';
+
+            onOrderRecipeSelectChange();
+            renderCloudOrders();
+
+            const modalEl = document.getElementById('orderCalculatorModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        }
+
+        function onOrderUnitNameChange() {
+            const unitVal = document.getElementById('order_unit_name').value.trim() || '顆';
+            const badgeEl = document.getElementById('order_unit_badge');
+            if (badgeEl) badgeEl.innerText = unitVal;
+            document.querySelectorAll('.order-unit-label').forEach(el => {
+                el.innerText = unitVal;
+            });
+            calculateOrderMaterials();
+        }
+
+        function onOrderTargetCountInput() {
+            const targetCountVal = document.getElementById('order_target_count').value.trim();
+            document.querySelectorAll('.order-calc-count-text').forEach(el => {
+                el.innerText = targetCountVal || '0';
+            });
+            calculateOrderMaterials();
+        }
+
+        function onOrderRecipeSelectChange() {
+            const recipeName = document.getElementById('order_recipe_select').value;
+            const container = document.getElementById('orderSectionsList');
+            const summaryArea = document.getElementById('orderMaterialSummaryArea');
+
+            if (!recipeName) {
+                container.innerHTML = '<div class="text-muted small">請先選擇標的配方。</div>';
+                summaryArea.style.display = 'none';
+                return;
+            }
+
+            const recipe = dbRecipes.find(r => r.recipe_name === recipeName);
+            if (!recipe || !recipe.target_recipe) {
+                container.innerHTML = '<div class="text-warning small">此配方目前無明細內容。</div>';
+                summaryArea.style.display = 'none';
+                return;
+            }
+
+            const sections = [];
+            let currentSec = { title: '主麵團', items: [] };
+
+            recipe.target_recipe.split('\n').forEach(line => {
+                if (!line.trim()) return;
+                if (line.startsWith('## ')) {
+                    if (currentSec.items.length > 0 || currentSec.title !== '主麵團') {
+                        sections.push(currentSec);
+                    }
+                    currentSec = { title: line.replace('## ', '').trim(), items: [] };
+                    return;
+                }
+                const parts = line.split(' | ');
+                let name = parts[0] || '';
+                let weight = 0;
+                parts.forEach(p => {
+                    if (p.includes('g') && !p.includes('$') && !p.includes('/')) {
+                        weight = parseFloat(p.replace('g', '')) || 0;
+                    }
+                });
+                if (name) {
+                    currentSec.items.push({ name: name, weight: weight, rawLine: line });
+                }
+            });
+            if (currentSec.items.length > 0) {
+                sections.push(currentSec);
+            }
+
+            if (sections.length === 0) {
+                container.innerHTML = '<div class="text-warning small">解析此配方區塊失敗。</div>';
+                summaryArea.style.display = 'none';
+                return;
+            }
+
+            const unitName = document.getElementById('order_unit_name').value.trim() || '顆';
+            const targetCount = parseFloat(document.getElementById('order_target_count').value) || 10;
+
+            container.innerHTML = sections.map((sec, idx) => {
+                const secBaseWeight = sec.items.reduce((sum, item) => sum + item.weight, 0);
+                // 預設一顆克數 = 原配方基準總重 / 10 份
+                const defaultPieceGram = secBaseWeight > 0 ? (Math.round((secBaseWeight / 10) * 10) / 10) : 50;
+
+                return `
+                    <div class="card mb-2 border-0 bg-white shadow-sm section-order-card" data-sec-title="${sec.title}" data-sec-base-weight="${secBaseWeight}">
+                        <div class="card-body py-2 px-3">
+                            <div class="row align-items-center g-2">
+                                <div class="col-md-6">
+                                    <span class="fw-bold text-primary">🧩 ${sec.title}</span>
+                                    <div class="text-muted small">原配方基準總重: ${secBaseWeight}g (${sec.items.length} 項食材)</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">一顆 / 單份</span>
+                                        <input type="number" step="0.1" class="form-control order-sec-piece-gram" id="order_sec_piece_gram_${idx}" value="${defaultPieceGram}" oninput="calculateOrderMaterials()">
+                                        <span class="input-group-text">g / <span class="order-unit-label">${unitName}</span></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 🧪 區塊食材成分比例與單顆用量標籤 -->
+                            <div class="mt-2 pt-2 border-top bg-light p-2 rounded" id="order_sec_spec_container_${idx}"></div>
+
+                            <div class="text-end mt-1 small">
+                                <span class="text-secondary">此區塊總需重 (<span class="order-calc-count-text">${targetCount}</span> <span class="order-unit-label">${unitName}</span>): </span>
+                                <span class="fw-bold text-dark sec-calc-weight" id="order_sec_calc_weight_${idx}">0g</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            calculateOrderMaterials();
+        }
+
+        let currentOrderShoppingText = '';
+
+        function calculateOrderMaterials() {
+            const recipeName = document.getElementById('order_recipe_select').value;
+            const summaryArea = document.getElementById('orderMaterialSummaryArea');
+
+            if (!recipeName) {
+                summaryArea.style.display = 'none';
+                return;
+            }
+
+            const recipe = dbRecipes.find(r => r.recipe_name === recipeName);
+            if (!recipe || !recipe.target_recipe) return;
+
+            const targetCount = parseFloat(document.getElementById('order_target_count').value) || 0;
+            const unitName = document.getElementById('order_unit_name').value.trim() || '顆';
+
+            let aggregatedMaterials = {};
+            let secDetailsForShopping = [];
+            let secSpecLinesForShopping = [];
+            let secSpecsHtmlList = [];
+
+            let secIndex = 0;
+            let currentSecTitle = '主麵團';
+            let currentSecItems = [];
+
+            const lines = recipe.target_recipe.split('\n');
+
+            const processSec = (secTitle, items, pieceGramInputVal) => {
+                const pieceGram = parseFloat(pieceGramInputVal) || 0;
+                const totalSecWeight = pieceGram * targetCount;
+                const secBaseWeight = items.reduce((s, i) => s + i.weight, 0);
+
+                let secItemSpecs = [];
+                let secBadgeHtmls = [];
+
+                items.forEach(item => {
+                    const scaled = secBaseWeight > 0 ? (totalSecWeight * (item.weight / secBaseWeight)) : 0;
+                    const ratioNum = secBaseWeight > 0 ? (Math.round((item.weight / secBaseWeight) * 1000) / 10) : 0;
+                    const perPieceGram = secBaseWeight > 0 ? (Math.round((pieceGram * (item.weight / secBaseWeight)) * 10) / 10) : 0;
+
+                    if (!aggregatedMaterials[item.name]) {
+                        aggregatedMaterials[item.name] = { totalWeight: 0, breakdown: [] };
+                    }
+                    aggregatedMaterials[item.name].totalWeight += scaled;
+                    aggregatedMaterials[item.name].breakdown.push({ secTitle: secTitle, weight: scaled });
+
+                    secItemSpecs.push({ name: item.name, ratio: ratioNum, perPieceGram: perPieceGram, totalScaled: Math.round(scaled * 10) / 10 });
+                    secBadgeHtmls.push(`<span class="badge bg-white text-dark border me-1 mb-1 fw-normal" style="font-size:0.75rem;">${item.name} <strong class="text-primary">${ratioNum}%</strong> (${perPieceGram}g/<span class="order-unit-label">${unitName}</span>)</span>`);
+                });
+
+                const specContainer = document.getElementById(`order_sec_spec_container_${secIndex}`);
+                if (specContainer) {
+                    specContainer.innerHTML = `
+                        <div class="d-flex flex-wrap align-items-center">
+                            <span class="fw-bold me-2 text-secondary" style="font-size:0.78rem;">📊 單顆用量與成分比例:</span>
+                            ${secBadgeHtmls.join('')}
+                        </div>
+                    `;
+                }
+
+                const calcSpan = document.getElementById(`order_sec_calc_weight_${secIndex}`);
+                if (calcSpan) {
+                    calcSpan.innerText = Math.round(totalSecWeight * 10) / 10 + 'g';
+                }
+                secDetailsForShopping.push(`${secTitle} (${pieceGram}g/${unitName})`);
+
+                secSpecLinesForShopping.push(`• 【${secTitle}】單顆重量: ${pieceGram}g/${unitName}`);
+                secItemSpecs.forEach(i => {
+                    secSpecLinesForShopping.push(`  - ${i.name}: ${i.ratio}% (單顆 ${i.perPieceGram}g, 全案共 ${i.totalScaled}g)`);
+                });
+
+                secSpecsHtmlList.push({
+                    title: secTitle,
+                    pieceGram: pieceGram,
+                    totalSecWeight: Math.round(totalSecWeight * 10) / 10,
+                    items: secItemSpecs
+                });
+
+                secIndex++;
+            };
+
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                if (line.startsWith('## ')) {
+                    if (currentSecItems.length > 0) {
+                        const gramVal = document.getElementById(`order_sec_piece_gram_${secIndex}`)?.value || '0';
+                        processSec(currentSecTitle, currentSecItems, gramVal);
+                    }
+                    currentSecTitle = line.replace('## ', '').trim();
+                    currentSecItems = [];
+                    return;
+                }
+                const parts = line.split(' | ');
+                let name = parts[0] || '';
+                let weight = 0;
+                parts.forEach(p => {
+                    if (p.includes('g') && !p.includes('$') && !p.includes('/')) {
+                        weight = parseFloat(p.replace('g', '')) || 0;
+                    }
+                });
+                if (name) {
+                    currentSecItems.push({ name: name, weight: weight });
+                }
+            });
+
+            if (currentSecItems.length > 0) {
+                const gramVal = document.getElementById(`order_sec_piece_gram_${secIndex}`)?.value || '0';
+                processSec(currentSecTitle, currentSecItems, gramVal);
+            }
+
+            let totalWeightSum = 0;
+            let totalEstimatedCost = 0;
+            let summaryRowsHtml = '';
+            let shoppingListLines = [];
+
+            const orderName = document.getElementById('order_name_input').value.trim() || '訂單備料清單';
+
+            shoppingListLines.push(`【${orderName}】`);
+            shoppingListLines.push(`品項配方：${recipeName}`);
+            shoppingListLines.push(`訂單目標：總共 ${targetCount} ${unitName}`);
+            shoppingListLines.push(`----------------------------------------`);
+            shoppingListLines.push(`【訂單規格與成分比例 (單顆/單份規格)】`);
+            shoppingListLines.push(secSpecLinesForShopping.join('\n'));
+            shoppingListLines.push(`----------------------------------------`);
+            shoppingListLines.push(`【全案採買食材需求彙整】`);
+
+            Object.keys(aggregatedMaterials).forEach(ingName => {
+                const item = aggregatedMaterials[ingName];
+                const roundedWeight = Math.round(item.totalWeight * 10) / 10;
+                totalWeightSum += roundedWeight;
+
+                const eggPricing = resolveEggPricing(ingName, '', dbPurchases);
+                let unitCostStr = '—';
+                let costNum = 0;
+
+                if (eggPricing) {
+                    unitCostStr = eggPricing.priceTag;
+                    if (eggPricing.purchasePrice > 0 && eggPricing.purchaseWeight > 0) {
+                        costNum = (roundedWeight / 50) * (eggPricing.purchasePrice / (eggPricing.purchaseWeight / 60));
+                    }
+                } else {
+                    const validPurchase = p => p.ingredient && p.ingredient.trim() === ingName && parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
+                    const p = dbPurchases.find(validPurchase);
+                    if (p) {
+                        unitCostStr = `$${p.price}/${p.weight}g`;
+                        costNum = (roundedWeight * parseFloat(p.price)) / parseFloat(p.weight);
+                    }
+                }
+
+                if (costNum > 0) {
+                    totalEstimatedCost += costNum;
+                }
+
+                summaryRowsHtml += `
+                    <tr>
+                        <td><strong>${ingName}</strong></td>
+                        <td class="text-end fw-bold text-success fs-6">${roundedWeight}g</td>
+                        <td class="text-end text-muted small">${unitCostStr}</td>
+                        <td class="text-end font-monospace">${costNum > 0 ? '$' + Math.round(costNum) : '—'}</td>
+                    </tr>
+                `;
+
+                shoppingListLines.push(`• ${ingName}: ${roundedWeight}g`);
+            });
+
+            shoppingListLines.push(`----------------------------------------`);
+            shoppingListLines.push(`全案食材總重：${Math.round(totalWeightSum)}g`);
+            if (totalEstimatedCost > 0) {
+                shoppingListLines.push(`預估食材總成本：$${Math.round(totalEstimatedCost)}`);
+            }
+
+            currentOrderShoppingText = shoppingListLines.join('\n');
+
+            let specCardsHtml = secSpecsHtmlList.map(sec => `
+                <div class="card mb-2 border shadow-sm">
+                    <div class="card-header bg-light py-1 px-3 d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-dark small">🧩 ${sec.title} (單顆 ${sec.pieceGram}g / 全案需求 ${sec.totalSecWeight}g)</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-striped mb-0" style="font-size:0.8rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>食材</th>
+                                    <th class="text-end">成分比例 (%)</th>
+                                    <th class="text-end">單顆用量 (g/${unitName})</th>
+                                    <th class="text-end">全案總需 (g)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sec.items.map(i => `
+                                    <tr>
+                                        <td>${i.name}</td>
+                                        <td class="text-end font-monospace text-primary fw-bold">${i.ratio}%</td>
+                                        <td class="text-end font-monospace">${i.perPieceGram}g</td>
+                                        <td class="text-end font-monospace fw-bold">${i.totalScaled}g</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `).join('');
+
+            summaryArea.style.display = 'block';
+            summaryArea.innerHTML = `
+                <div class="card border shadow-sm mb-3">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-dark">📊 全案材料反推加總彙整</span>
+                        <button type="button" class="btn btn-sm btn-outline-success py-0 px-2" onclick="copyOrderShoppingList()">📋 複製完整採買與規格明細</button>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover table-sm mb-0" style="font-size:0.85rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>食材名稱</th>
+                                    <th class="text-end">反推總需克數</th>
+                                    <th class="text-end">採買單價參考</th>
+                                    <th class="text-end">預估小計成本</th>
+                                </tr>
+                            </thead>
+                            <tbody>${summaryRowsHtml}</tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-secondary">全案食材總重：<span class="text-dark fs-6">${Math.round(totalWeightSum)}g</span></span>
+                        <span class="fw-bold text-success fs-6">預估全案總成本：$${Math.round(totalEstimatedCost)}</span>
+                    </div>
+                </div>
+
+                <div class="card border shadow-sm">
+                    <div class="card-header bg-white py-2">
+                        <span class="fw-bold text-primary">📋 訂單產品區塊規格標籤 (單顆份量 & 成分比例)</span>
+                    </div>
+                    <div class="card-body p-2 bg-light">
+                        ${specCardsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function copyOrderShoppingList() {
+            if (!currentOrderShoppingText) return alert('目前尚無採買備料文字');
+            navigator.clipboard.writeText(currentOrderShoppingText).then(() => {
+                alert('📋 已成功複製全案採買備料清單至剪貼簿！');
+            }).catch(err => {
+                prompt('請複製以下備料文字：', currentOrderShoppingText);
+            });
+        }
+
+        function clearOrderForm() {
+            currentOrderId = null;
+            document.getElementById('order-form-title').innerText = '📝 設定訂單製作數量與每顆克數';
+            document.getElementById('order_name_input').value = '';
+            document.getElementById('order_note_input').value = '';
+            document.getElementById('order_recipe_select').value = '';
+            document.getElementById('order_target_count').value = '10';
+            document.getElementById('order_unit_name').value = '顆';
+            const badgeEl = document.getElementById('order_unit_badge');
+            if (badgeEl) badgeEl.innerText = '顆';
+            document.getElementById('btnSaveOrder').innerText = '💾 儲存訂單至雲端 Orders Sheet';
+            onOrderRecipeSelectChange();
+        }
+
+        async function saveOrderToCloud() {
+            const recipeName = document.getElementById('order_recipe_select').value;
+            const orderName = document.getElementById('order_name_input').value.trim();
+            const note = document.getElementById('order_note_input').value.trim();
+
+            if (!recipeName) return alert('請先選擇標的配方');
+            if (!orderName) return alert('請填寫訂單名稱 / 客戶名稱');
+
+            const btn = document.getElementById('btnSaveOrder');
+            btn.disabled = true;
+            btn.innerText = '雲端寫入中...';
+
+            const targetCount = parseFloat(document.getElementById('order_target_count').value) || 0;
+            const unitName = document.getElementById('order_unit_name').value.trim() || '顆';
+            const secQuantities = [];
+
+            document.querySelectorAll('.section-order-card').forEach((card, idx) => {
+                const title = card.getAttribute('data-sec-title') || '區塊';
+                const pieceGram = parseFloat(document.getElementById(`order_sec_piece_gram_${idx}`)?.value) || 0;
+                secQuantities.push({ section_title: title, piece_gram: pieceGram });
+            });
+
+            const orderConfig = {
+                target_count: targetCount,
+                unit_name: unitName,
+                sections: secQuantities
+            };
+
+            const payload = {
+                action: currentOrderId ? 'update_order' : 'save_order',
+                id: currentOrderId || 'ord_' + Date.now(),
+                date: currentOrderId ? undefined : new Date().toLocaleString('zh-TW', { hour12: false }),
+                order_name: orderName,
+                recipe_name: recipeName,
+                sections_json: JSON.stringify(orderConfig),
+                total_materials_json: JSON.stringify(currentOrderShoppingText),
+                note: note
+            };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (result.status !== 'success') {
+                    alert('⚠️ 儲存失敗：' + (result.message || '未知錯誤'));
+                    btn.disabled = false;
+                    btn.innerText = '💾 儲存訂單至雲端 Orders Sheet';
+                    return;
+                }
+
+                if (currentOrderId) {
+                    const idx = dbOrders.findIndex(o => String(o.id) === String(currentOrderId));
+                    if (idx > -1) {
+                        payload.date = dbOrders[idx].date;
+                        dbOrders[idx] = payload;
+                    }
+                    alert('✅ 訂單紀錄已成功更新！');
+                } else {
+                    dbOrders.unshift(payload);
+                    alert('✅ 新訂單紀錄已成功寫入 Google Sheets (Orders)！');
+                }
+
+                renderCloudOrders();
+                clearOrderForm();
+            } catch (err) {
+                alert('⚠️ 網路錯誤：' + err.message);
+            }
+
+            btn.disabled = false;
+            btn.innerText = '💾 儲存訂單至雲端 Orders Sheet';
+        }
+
+        function renderCloudOrders() {
+            const container = document.getElementById('cloudOrdersList');
+            if (!container) return;
+
+            if (!dbOrders || dbOrders.length === 0) {
+                container.innerHTML = '<div class="text-muted small p-2 text-center">雲端尚無訂單歷史紀錄 (`Orders` Sheet)</div>';
+                return;
+            }
+
+            const isLoggedIn = checkAuth();
+
+            container.innerHTML = dbOrders.map(o => {
+                let secSummary = '';
+                try {
+                    const parsed = JSON.parse(o.sections_json);
+                    if (parsed && parsed.target_count !== undefined && Array.isArray(parsed.sections)) {
+                        const targetCount = parsed.target_count;
+                        const unitName = parsed.unit_name || '顆';
+                        const secStr = parsed.sections.map(s => `${s.section_title} ${(s.piece_gram || s.custom_gram || 0)}g/${unitName}`).join(', ');
+                        secSummary = `總數: ${targetCount} ${unitName} (${secStr})`;
+                    } else if (Array.isArray(parsed)) {
+                        secSummary = parsed.map(s => s.section_title + ' x' + s.quantity + '批').join(', ');
+                    } else {
+                        secSummary = o.sections_json || '';
+                    }
+                } catch (e) {
+                    secSummary = o.sections_json || '';
+                }
+
+                return `
+                    <div class="card mb-2 border-0 shadow-sm">
+                        <div class="card-body py-2 px-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong class="text-primary fs-6">📦 ${o.order_name}</strong>
+                                    <span class="badge bg-secondary ms-2">${o.recipe_name}</span>
+                                    ${o.note ? '<span class="badge bg-light text-dark border ms-1">' + o.note + '</span>' : ''}
+                                </div>
+                                <div class="text-muted small">${o.date || ''}</div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1 text-muted small">
+                                <div>訂單規格: ${secSummary}</div>
+                                ${isLoggedIn ? `
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-primary me-2 fw-bold" onclick="loadCloudOrder('${o.id}')" style="font-size:0.8rem; text-decoration:none;">✏️ 載入此訂單</button>
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-danger fw-bold" onclick="deleteCloudOrder('${o.id}')" style="font-size:0.8rem; text-decoration:none;">🗑️ 刪除</button>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadCloudOrder(id) {
+            const order = dbOrders.find(o => String(o.id) === String(id));
+            if (!order) return;
+
+            currentOrderId = order.id;
+            document.getElementById('order-form-title').innerText = '✏️ 編輯雲端訂單紀錄';
+            document.getElementById('order_name_input').value = order.order_name || '';
+            document.getElementById('order_recipe_select').value = order.recipe_name || '';
+            document.getElementById('order_note_input').value = order.note || '';
+            document.getElementById('btnSaveOrder').innerText = '💾 更新覆蓋此筆訂單';
+
+            try {
+                const config = JSON.parse(order.sections_json);
+                if (config.target_count !== undefined) {
+                    document.getElementById('order_target_count').value = config.target_count;
+                }
+                if (config.unit_name) {
+                    document.getElementById('order_unit_name').value = config.unit_name;
+                    const badgeEl = document.getElementById('order_unit_badge');
+                    if (badgeEl) badgeEl.innerText = config.unit_name;
+                }
+            } catch (e) {}
+
+            onOrderRecipeSelectChange();
+
+            try {
+                const parsed = JSON.parse(order.sections_json);
+                const secs = Array.isArray(parsed) ? parsed : (parsed.sections || []);
+                secs.forEach(s => {
+                    const secCards = document.querySelectorAll('.section-order-card');
+                    secCards.forEach((card, idx) => {
+                        const title = card.getAttribute('data-sec-title');
+                        if (title === s.section_title) {
+                            const gramInput = document.getElementById(`order_sec_piece_gram_${idx}`);
+                            if (gramInput) {
+                                const pieceGram = s.piece_gram !== undefined ? s.piece_gram : (s.custom_gram || 0);
+                                gramInput.value = pieceGram;
+                            }
+                        }
+                    });
+                });
+                calculateOrderMaterials();
+            } catch (e) {}
+
+            const modalBody = document.querySelector('#orderCalculatorModal .modal-body');
+            if (modalBody) modalBody.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function deleteCloudOrder(id) {
+            if (!confirm('確定要刪除這筆訂單紀錄嗎？')) return;
+
+            const payload = { action: 'delete_order', id: String(id) };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (result.status !== 'success') {
+                    alert('⚠️ 刪除失敗：' + (result.message || '未知錯誤'));
+                    return;
+                }
+
+                const idx = dbOrders.findIndex(o => String(o.id) === String(id));
+                if (idx > -1) {
+                    dbOrders.splice(idx, 1);
+                }
+                alert('訂單紀錄已成功刪除！');
+                renderCloudOrders();
+                if (currentOrderId === id) {
+                    clearOrderForm();
+                }
+            } catch (err) {
+                alert('⚠️ 網路錯誤：' + err.message);
+            }
         }
     </script>
 </body>
