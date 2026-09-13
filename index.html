@@ -201,71 +201,86 @@
         <div id="recordsContainer" class="accordion mb-4"></div>
 
 
-        <div class="card mb-4" id="admin-recipe-section">
-            <div class="card-body">
-                <h5 class="card-title mb-3">📝 搜尋或建立經典配方 (Master Recipe)</h5>
-
-                <div class="mb-4 position-relative">
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-1 fw-bold">主品項名稱 (搜尋或建立，如 芋頭酥)</label>
-                            <input type="text" class="form-control" id="recipe_main_name" placeholder="例如: 芋頭酥" autocomplete="off" oninput="updateCombinedRecipeName()">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small mb-1 fw-bold">版本名稱 (如 經典原味, 減糖30%, 芝麻酥)</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="recipe_version_name" placeholder="例如: 經典原味" autocomplete="off" oninput="updateCombinedRecipeName()">
-                                <button type="button" class="btn btn-outline-danger" onclick="clearAllRecipeFields()" title="清除所有欄位">🗑️ 清除</button>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="hidden" id="recipe_name">
-                    <div id="autocomplete-results" class="list-group position-absolute w-100 autocomplete-list" style="display: none; z-index: 1050;"></div>
+        <!-- 經典原始食譜管理區塊 (預設可摺疊) -->
+        <div class="card mb-4 border shadow-sm" id="admin-recipe-section">
+            <div class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center"
+                style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#masterRecipeCollapse"
+                aria-expanded="false" aria-controls="masterRecipeCollapse">
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="card-title mb-0 text-primary fw-bold">📝 經典原始食譜管理 (Master Recipe)</h5>
+                    <span class="badge bg-secondary-subtle text-secondary border small">點擊可展開/折疊</span>
                 </div>
+                <button class="btn btn-sm btn-outline-primary" type="button">
+                    <span class="collapse-text">🔽 展開配方區塊</span>
+                </button>
+            </div>
 
-                <div class="mb-3 p-3 bg-light rounded border">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="section-title mb-0">🍞 經典配方成分與比例 (Baker's %)</div>
-                        <div>
-                            <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 auth-only me-1" style="font-size: 0.8rem;" onclick="openRemainingScaleModal('target-recipe-container')">⚖️ 剩餘食材回推</button>
-                        </div>
-                    </div>
-                    <div id="target-recipe-container"></div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3 fw-bold auth-only"
-                        onclick="addRecipeSection('target-recipe-container', false, true, '主麵團')">➕ 新增配方區塊</button>
-
-                    <div class="mb-3">
-                        <label class="form-label text-muted small mb-1">製作步驟</label>
-                        <textarea class="form-control" id="target_steps" rows="3"
-                            placeholder="1. 麵粉過篩...&#10;2. 烤箱預熱..."></textarea>
-                    </div>
-
-                    <div class="row mb-2">
-                        <div class="col-4">
-                            <label class="form-label text-muted small mb-1">預設上火</label>
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" id="target_temp_up">
-                                <span class="input-group-text"><sup>o</sup>C</span>
+            <div class="collapse" id="masterRecipeCollapse">
+                <div class="card-body pt-0">
+                    <div class="mb-4 position-relative">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small mb-1 fw-bold">主品項名稱 (搜尋或建立，如 芋頭酥)</label>
+                                <input type="text" class="form-control" id="recipe_main_name" placeholder="例如: 芋頭酥" autocomplete="off" oninput="updateCombinedRecipeName()">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small mb-1 fw-bold">版本名稱 (如 經典原味, 減糖30%, 芝麻酥)</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="recipe_version_name" placeholder="例如: 經典原味" autocomplete="off" oninput="updateCombinedRecipeName()">
+                                    <button type="button" class="btn btn-outline-danger" onclick="clearAllRecipeFields()" title="清除所有欄位">🗑️ 清除</button>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <label class="form-label text-muted small mb-1">預設下火</label>
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" id="target_temp_down">
-                                <span class="input-group-text"><sup>o</sup>C</span>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label text-muted small mb-1">預設時間</label>
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" id="target_time">
-                                <span class="input-group-text">分鐘</span>
-                            </div>
-                        </div>
+                        <input type="hidden" id="recipe_name">
+                        <div id="autocomplete-results" class="list-group position-absolute w-100 autocomplete-list" style="display: none; z-index: 1050;"></div>
                     </div>
-                    <button type="button" class="btn btn-dark btn-sm w-100 auth-only" onclick="saveOriginalRecipe()"
-                        id="btnSaveRecipe">💾 建立/更新原始配方至資料庫</button>
+
+                    <div class="mb-3 p-3 bg-light rounded border">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="section-title mb-0">🍞 經典配方成分與比例 (Baker's %)</div>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 auth-only me-1" style="font-size: 0.8rem;" onclick="openRemainingScaleModal('target-recipe-container')">⚖️ 剩餘食材回推</button>
+                            </div>
+                        </div>
+                        <div id="target-recipe-container"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3 fw-bold auth-only"
+                            onclick="addRecipeSection('target-recipe-container', false, true, '主麵團')">➕ 新增配方區塊</button>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">製作步驟</label>
+                            <textarea class="form-control" id="target_steps" rows="3"
+                                placeholder="1. 麵粉過篩...&#10;2. 烤箱預熱..."></textarea>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-4">
+                                <label class="form-label text-muted small mb-1">預設上火</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="target_temp_up">
+                                    <span class="input-group-text"><sup>o</sup>C</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label text-muted small mb-1">預設下火</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="target_temp_down">
+                                    <span class="input-group-text"><sup>o</sup>C</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label text-muted small mb-1">預設時間</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="target_time">
+                                    <span class="input-group-text">分鐘</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-dark btn-sm w-100 auth-only" onclick="saveOriginalRecipe()"
+                            id="btnSaveRecipe">💾 建立/更新原始配方至資料庫</button>
+                    </div>
                 </div>
+            </div>
+        </div>
 
                 <div id="record-selection-area" class="mb-4 p-3 border rounded shadow-sm auth-only"
                     style="display: none; background-color: #e9ecef;">
@@ -1506,6 +1521,13 @@
 
         // 選擇配方後，帶入原始配方並顯示歷史紀錄選項
         function loadRecipeDetails(fullName) {
+            // 自動展開經典配方摺疊區塊
+            const collapseEl = document.getElementById('masterRecipeCollapse');
+            if (collapseEl) {
+                const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+                bsCollapse.show();
+            }
+
             const recipe = dbRecipes.find(r => r.recipe_name === fullName);
             if (recipe) {
                 const { mainName, versionName } = parseRecipeFullName(fullName);
@@ -1844,6 +1866,17 @@
         loadData();
 
         document.addEventListener('DOMContentLoaded', function () {
+            const collapseEl = document.getElementById('masterRecipeCollapse');
+            if (collapseEl) {
+                collapseEl.addEventListener('shown.bs.collapse', function () {
+                    const btnText = document.querySelector('#admin-recipe-section .collapse-text');
+                    if (btnText) btnText.innerText = '🔼 折疊配方區塊';
+                });
+                collapseEl.addEventListener('hidden.bs.collapse', function () {
+                    const btnText = document.querySelector('#admin-recipe-section .collapse-text');
+                    if (btnText) btnText.innerText = '🔽 展開配方區塊';
+                });
+            }
             const recordForm = document.getElementById('recordForm');
             if (recordForm) {
                 recordForm.addEventListener('submit', async function (e) {
