@@ -55,6 +55,7 @@
 | J | `result_notes` | 字串 (String) | 測試結果評估、口感心得與風味紀錄 |
 | K | `total_cost` | 數字 (Number) | 本次烘焙所使用的食材預估總成本 ($) |
 | L | `oven_spec` | 字串 (String) | 所使用的烤箱設備規格 (如 `Panasonic 38L`, `中部電機`) |
+| M | `containers_json` | 字串 (JSON) | 本次使用的容器陣列（含名稱、個數、每個麵團/麵糊克數快照）；空陣列代表不使用容器 |
 
 ### 2.4. `Purchases` 工作表
 記錄食材採買與進貨紀錄，用於精算烘焙成本。
@@ -63,11 +64,12 @@
 |---|---|---|---|
 | A | `id` | 字串 (String) | 採買紀錄唯一 ID |
 | B | `date` | 字串 (String) | 採買日期 (YYYY/MM/DD) |
-| C | `ingredient` | 字串 (String) | 食材名稱 |
-| D | `weight` | 數字 (Number) | 採買包裝重量/數量 (克數 g) |
+| C | `ingredient` | 字串 (String) | 食材/包材名稱 |
+| D | `weight` | 數字 (Number) | 採買包裝重量/數量 (克數 g 或包材數量) |
 | E | `price` | 數字 (Number) | 採買金額 ($) |
-| F | `brand` | 字串 (String) | 食材品牌 |
+| F | `brand` | 字串 (String) | 品牌/規格 |
 | G | `store` | 字串 (String) | 購買店家/通路 |
+| H | `unit` | 字串 (String) | 單位 (如 `g`、`個`、`包`、`張` 等) |
 
 ### 2.5. `Options` 工作表
 包含前端下拉選單預設之常用選單項目（如食材名稱、品牌、店家）。
@@ -90,6 +92,22 @@
 | E | `sections_json` | 字串 (String) | 包含目標總顆數、單位與各區塊單顆克數的 JSON 字串 |
 | F | `total_materials_json` | 字串 (String) | 包含全案採買清單與區塊規格明細的文字 JSON 字串 |
 | G | `note` | 字串 (String) | 訂單備註事項 |
+
+### 2.7. `Containers` 工作表
+儲存烘焙容器庫（首次 `save_container` 時自動建立）。
+
+| 欄位 | 標題 (Header) | 資料型態 | 說明 |
+|---|---|---|---|
+| A | `id` | 字串 | 容器唯一 ID |
+| B | `name` | 字串 | 容器名稱/型號 (如 `SN2155`) |
+| C | `quantity` | 數字 | 擁有數量 |
+| D | `dough_g` | 數字 | 每個容器需要的麵團克數（與 `batter_g` 擇一，另一個為 0） |
+| E | `batter_g` | 數字 | 每個容器需要的麵糊克數（與 `dough_g` 擇一，另一個為 0） |
+| F | `note` | 字串 | 備註 |
+
+`containers_json` 範例：`[{"container_id":"ct_1","name":"SN2155","custom":false,"qty":2,"dough_g":500,"batter_g":0}]`
+
+API 動作：`save_container`、`update_container`、`delete_container`（欄位同上，皆以 `id` 識別）；`GET /` 另回傳 `containers`。
 
 ---
 

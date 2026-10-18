@@ -180,6 +180,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0" style="color: #6c757d;">🧑‍🔬 T³ 減法實驗室</h2>
             <div>
+                <button class="btn btn-sm btn-outline-primary me-2 auth-only" onclick="openContainerModal()">🥣 容器管理</button>
                 <button class="btn btn-sm btn-outline-primary me-2 auth-only" onclick="openOrderModal()">📦 訂單試算</button>
                 <button class="btn btn-sm btn-outline-primary me-2 auth-only" onclick="openPurchaseModal()">🛋️ 購買紀錄</button>
                 <button class="btn btn-sm btn-outline-primary" id="btn-show-login" onclick="showLoginModal()">🔑
@@ -197,6 +198,15 @@
             <option value="減油"></option>
         </datalist>
         <datalist id="store-list"></datalist>
+        <datalist id="unit-list">
+            <option value="g"></option>
+            <option value="個"></option>
+            <option value="入"></option>
+            <option value="張"></option>
+            <option value="包"></option>
+            <option value="盒"></option>
+            <option value="件"></option>
+        </datalist>
         <h5 class="mb-3 text-secondary mt-3">🗂️ 實驗紀錄總覽庫</h5>
         <div id="recordsContainer" class="accordion mb-4"></div>
 
@@ -243,8 +253,10 @@
                             </div>
                         </div>
                         <div id="target-recipe-container"></div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3 fw-bold auth-only"
-                            onclick="addRecipeSection('target-recipe-container', false, true, '主麵團')">➕ 新增配方區塊</button>
+                        <div class="d-flex gap-2 mt-1 mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1 fw-bold auth-only" onclick="addRecipeSection('target-recipe-container', false, true, '主麵團')">➕ 新增食材區塊</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1 fw-bold auth-only" onclick="addRecipeSection('target-recipe-container', false, true, '📦 包材')">📦 新增包材區塊</button>
+                        </div>
 
                         <div class="mb-3">
                             <label class="form-label text-muted small mb-1">製作步驟</label>
@@ -313,8 +325,10 @@
                             </div>
                         </div>
                         <div id="actual-recipe-container"></div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1 w-100 mb-3 fw-bold"
-                            onclick="addRecipeSection('actual-recipe-container', true, false, '主麵團')">➕ 新增配方區塊</button>
+                        <div class="d-flex gap-2 mt-1 mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1 fw-bold auth-only" onclick="addRecipeSection('actual-recipe-container', true, false, '主麵團')">➕ 新增食材區塊</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1 fw-bold auth-only" onclick="addRecipeSection('actual-recipe-container', true, false, '📦 包材')">📦 新增包材區塊</button>
+                        </div>
 
                         <div class="row mb-2">
                             <div class="col-4">
@@ -338,6 +352,21 @@
                                     <span class="input-group-text">分鐘</span>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- 🥣 烘焙容器 -->
+                        <div class="mb-3 p-2 bg-white rounded border">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted small fw-bold">🥣 使用容器 (可多選 / 自訂 / 不使用)</span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.8rem;" onclick="openContainerModal()">管理容器庫</button>
+                            </div>
+                            <div id="container-rows"></div>
+                            <div class="text-muted small" id="container-empty-hint">目前未使用容器（直接秤重製作）。</div>
+                            <div class="d-flex gap-2 mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1" onclick="addContainerRow()">➕ 新增容器</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" onclick="addContainerRow({ custom: true })">✏️ 自訂容器</button>
+                            </div>
+                            <div id="container-summary" class="mt-2" style="display:none;"></div>
                         </div>
 
                         <div class="row mb-2">
@@ -396,10 +425,10 @@
                                 </div>
                                 <div class="row g-2 mb-2">
                                     <div class="col-4">
-                                        <label class="form-label text-muted small mb-1">克數</label>
+                                        <label class="form-label text-muted small mb-1">數量 / 重量</label>
                                         <div class="input-group">
                                             <input type="number" step="1" class="form-control" id="pur_weight" placeholder="0">
-                                            <span class="input-group-text">g</span>
+                                            <input type="text" class="form-control px-1 text-center" id="pur_unit" placeholder="單位" style="max-width: 60px;" value="g" list="unit-list">
                                         </div>
                                     </div>
                                     <div class="col-4">
@@ -561,6 +590,59 @@
         </div>
     </div>
 
+
+    <!-- 🥣 容器管理 Modal -->
+    <div class="modal fade auth-only" id="containerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">🥣 烘焙容器管理</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="card mb-3 border">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3" id="container-form-title">➕ 新增容器</h6>
+                            <div class="row g-2 mb-2">
+                                <div class="col-8">
+                                    <label class="form-label text-muted small mb-1">容器名稱 / 型號</label>
+                                    <input type="text" class="form-control form-control-sm" id="ct_name" placeholder="例如: SN2155">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label text-muted small mb-1">擁有數量</label>
+                                    <input type="number" min="0" step="1" class="form-control form-control-sm" id="ct_qty" placeholder="例如: 2">
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1">內容物類型</label>
+                                    <select class="form-select form-select-sm" id="ct_type">
+                                        <option value="dough">麵團</option>
+                                        <option value="batter">麵糊</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1">每個需要克數 (g)</label>
+                                    <input type="number" min="0" step="0.1" class="form-control form-control-sm" id="ct_gram" placeholder="例如: 500">
+                                </div>
+                            </div>
+                            <input type="text" class="form-control form-control-sm mb-2" id="ct_note" placeholder="備註 (選填)">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-dark btn-sm flex-grow-1" id="btnSaveContainer" onclick="saveContainer()">💾 儲存容器</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetContainerForm()">清空</button>
+                            </div>
+                        </div>
+                    </div>
+                    <h6 class="text-secondary mb-2">📚 容器庫</h6>
+                    <div id="containerList"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">關閉</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxpi1tUsOCMfblkaQyL6F00r7EYjIL2w2cfap--nFiQx6Tyc2m-hUZnrJXi7kYe8-xc/exec';
         let dbRecipes = [];
@@ -568,6 +650,9 @@
         let dbPurchases = [];
         let dbOptions = [];
         let dbOrders = [];
+        let dbContainers = [];
+        let currentContainerId = null;
+        let lastAutoYield = '';
         let currentRecordId = null;
         let currentCalculatedCostStr = '';
         let currentRemainingTargetContainer = '';
@@ -783,7 +868,7 @@
             }
         }
 
-        // 新增配方區塊
+        // 新增配方區塊 (支援食材區塊與包材區塊)
         function addRecipeSection(containerId, hasBrand, isRequired, title = '主麵團') {
             const container = document.getElementById(containerId);
             const sectionId = 'sec-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
@@ -792,36 +877,61 @@
             sec.id = sectionId;
 
             const spec = parseSectionTitleSpec(title);
-            const totalW = (spec.count && spec.gram) ? (parseFloat(spec.count) * parseFloat(spec.gram)).toFixed(1) : '';
+            const isPackaging = spec.name.includes('包材') || spec.name.includes('📦');
+            const totalW = (!isPackaging && spec.count && spec.gram) ? (parseFloat(spec.count) * parseFloat(spec.gram)).toFixed(1) : '';
 
-            sec.innerHTML = `
-                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
-                    <div class="d-flex align-items-center gap-1 flex-grow-1 flex-wrap">
-                        <input type="text" class="form-control form-control-sm section-title-name fw-bold text-primary" style="min-width: 120px; max-width: 180px;" placeholder="區塊名稱 (如: 油酥)" value="${spec.name}" oninput="updateSectionTotalWeight('${sectionId}')">
-                        <div class="input-group input-group-sm" style="width: 115px;" title="製作數量 (顆/份)">
-                            <input type="number" step="1" min="1" class="form-control section-title-count text-center" placeholder="顆數" value="${spec.count}" oninput="updateSectionTotalWeight('${sectionId}')">
-                            <span class="input-group-text px-1">顆</span>
-                        </div>
-                        <div class="input-group input-group-sm" style="width: 130px;" title="單顆用量重量 (g/顆)">
-                            <input type="number" step="0.1" min="0" class="form-control section-title-gram text-center" placeholder="單顆克數" value="${spec.gram}" oninput="updateSectionTotalWeight('${sectionId}')">
-                            <span class="input-group-text px-1">g/顆</span>
-                        </div>
-                        <span class="badge bg-light text-dark border ms-1 section-total-weight-badge" id="${sectionId}-weight-badge" title="區塊目標總重量">
-                            ${totalW ? `總計 ${totalW}g` : ''}
-                        </span>
+            let headerInputsHtml = '';
+            let subHeaderHtml = '';
+
+            if (isPackaging) {
+                headerInputsHtml = `
+                    <span class="badge bg-primary me-1">📦 包材</span>
+                    <input type="text" class="form-control form-control-sm section-title-name fw-bold text-primary" style="min-width: 140px; max-width: 200px;" placeholder="包材區塊名稱" value="${spec.name}">
+                `;
+                subHeaderHtml = `
+                    <div class="col-1"></div>
+                    <div class="col-4 text-muted small pb-1 text-start ps-2">包材名稱 (如: 禮盒, 機封袋)</div>
+                    <div class="col-3 text-muted small pb-1">用量 / 數量 (個)</div>
+                    <div class="col-3 text-muted small pb-1">品牌 / 規格備註</div>
+                    <div class="col-1"></div>
+                `;
+            } else {
+                headerInputsHtml = `
+                    <input type="text" class="form-control form-control-sm section-title-name fw-bold text-primary" style="min-width: 120px; max-width: 180px;" placeholder="區塊名稱 (如: 油酥)" value="${spec.name}" oninput="updateSectionTotalWeight('${sectionId}')">
+                    <div class="input-group input-group-sm" style="width: 115px;" title="製作數量 (顆/份)">
+                        <input type="number" step="1" min="1" class="form-control section-title-count text-center" placeholder="顆數" value="${spec.count}" oninput="updateSectionTotalWeight('${sectionId}')">
+                        <span class="input-group-text px-1">顆</span>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 auth-only" onclick="this.closest('.recipe-section').remove()">🗑️ 刪除此區塊</button>
-                </div>
-                <div class="row g-1 mb-1 text-center align-items-end">
+                    <div class="input-group input-group-sm" style="width: 130px;" title="單顆用量重量 (g/顆)">
+                        <input type="number" step="0.1" min="0" class="form-control section-title-gram text-center" placeholder="單顆克數" value="${spec.gram}" oninput="updateSectionTotalWeight('${sectionId}')">
+                        <span class="input-group-text px-1">g/顆</span>
+                    </div>
+                    <span class="badge bg-light text-dark border ms-1 section-total-weight-badge" id="${sectionId}-weight-badge" title="區塊目標總重量">
+                        ${totalW ? `總計 ${totalW}g` : ''}
+                    </span>
+                `;
+                subHeaderHtml = `
                     <div class="col-1"></div>
                     <div class="col-${hasBrand ? 3 : 3} text-muted small pb-1">食材名稱</div>
                     <div class="col-${hasBrand ? 2 : 3}"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcPctFromGrams('${sectionId}')">🔄 g算%</button></div>
                     <div class="col-${hasBrand ? 3 : 4}"><button type="button" class="btn btn-sm btn-outline-info w-100 py-0 px-0" style="font-size: 0.75rem;" onclick="calcGramsFromPct('${sectionId}')">🔄 %算g</button></div>
                     ${hasBrand ? '<div class="col-2 text-muted small pb-1">品牌</div>' : ''}
                     <div class="col-1"></div>
+                `;
+            }
+
+            sec.innerHTML = `
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                    <div class="d-flex align-items-center gap-1 flex-grow-1 flex-wrap">
+                        ${headerInputsHtml}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 auth-only" onclick="this.closest('.recipe-section').remove()">🗑️ 刪除此區塊</button>
+                </div>
+                <div class="row g-1 mb-1 text-center align-items-end">
+                    ${subHeaderHtml}
                 </div>
                 <div class="section-rows-container"></div>
-                <button type="button" class="btn btn-sm btn-light border w-100 mt-1 text-primary fw-bold auth-only" onclick="addRecipeRow('${sectionId}', ${hasBrand}, ${isRequired})">＋ 新增食材至此區塊</button>
+                <button type="button" class="btn btn-sm btn-light border w-100 mt-1 text-primary fw-bold auth-only" onclick="addRecipeRow('${sectionId}', ${hasBrand}, ${isRequired})">＋ 新增列至此區塊</button>
             `;
             container.appendChild(sec);
 
@@ -864,22 +974,37 @@
 
         // 新增配方列 (isRequired 用來區分原始配方和實驗配方是否必填)
         function addRecipeRow(sectionId, hasBrand, isRequired, name = '', pct = '', weight = '', brand = '') {
+            const sec = document.getElementById(sectionId);
+            const secTitleName = sec?.querySelector('.section-title-name')?.value?.trim() || '';
+            const isPkg = secTitleName.includes('包材') || secTitleName.includes('📦');
+
             const containerRows = document.querySelector(`#${sectionId} .section-rows-container`);
             const row = document.createElement('div');
             row.className = 'row g-1 mb-2 recipe-row align-items-center';
 
             let reqAttr = isRequired ? 'required' : '';
-            let brandHTML = hasBrand ? `<div class="col-2"><input type="text" list="brand-list" class="form-control ing-brand" placeholder="品牌" value="${brand}"></div>` : '';
-            let colSize = hasBrand ? { n: 3, p: 2, w: 3 } : { n: 3, p: 3, w: 4 };
 
-            row.innerHTML = `
-            <div class="col-1 text-center"><div class="drag-handle text-muted">☰</div></div>
-            <div class="col-${colSize.n}"><input type="text" list="ingredient-list" class="form-control ing-name" placeholder="食材" value="${name}" ${reqAttr}></div>
-            <div class="col-${colSize.p}"><input type="number" step="0.1" class="form-control ing-pct" placeholder="%" value="${pct}"></div>
-            <div class="col-${colSize.w}"><input type="number" step="0.1" class="form-control ing-weight" placeholder="克數" value="${weight}" ${reqAttr}></div>
-            ${brandHTML}
-            <div class="col-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger w-100 px-1 auth-only" onclick="this.closest('.recipe-row').remove()">×</button></div>
-        `;
+            if (isPkg) {
+                row.innerHTML = `
+                <div class="col-1 text-center"><div class="drag-handle text-muted">☰</div></div>
+                <div class="col-4"><input type="text" list="ingredient-list" class="form-control ing-name" placeholder="包材名稱 (如: 禮盒, 吸塑托)" value="${name}" ${reqAttr}></div>
+                <div class="col-3"><input type="number" step="1" min="1" class="form-control ing-weight" placeholder="用量(個/入)" value="${weight}" ${reqAttr}></div>
+                <div class="col-3"><input type="text" list="brand-list" class="form-control ing-brand" placeholder="品牌/規格備註" value="${brand}"></div>
+                <div class="col-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger w-100 px-1 auth-only" onclick="this.closest('.recipe-row').remove()">×</button></div>
+            `;
+            } else {
+                let brandHTML = hasBrand ? `<div class="col-2"><input type="text" list="brand-list" class="form-control ing-brand" placeholder="品牌" value="${brand}"></div>` : '';
+                let colSize = hasBrand ? { n: 3, p: 2, w: 3 } : { n: 3, p: 3, w: 4 };
+
+                row.innerHTML = `
+                <div class="col-1 text-center"><div class="drag-handle text-muted">☰</div></div>
+                <div class="col-${colSize.n}"><input type="text" list="ingredient-list" class="form-control ing-name" placeholder="食材" value="${name}" ${reqAttr}></div>
+                <div class="col-${colSize.p}"><input type="number" step="0.1" class="form-control ing-pct" placeholder="%" value="${pct}"></div>
+                <div class="col-${colSize.w}"><input type="number" step="0.1" class="form-control ing-weight" placeholder="克數" value="${weight}" ${reqAttr}></div>
+                ${brandHTML}
+                <div class="col-1 text-end"><button type="button" class="btn btn-sm btn-outline-danger w-100 px-1 auth-only" onclick="this.closest('.recipe-row').remove()">×</button></div>
+            `;
+            }
 
             // 綁定拖拉事件
             row.addEventListener('dragstart', () => {
@@ -1242,6 +1367,9 @@
                 dbPurchases = data.purchases || [];
                 dbOptions = data.options || [];
                 dbOrders = data.orders || [];
+                dbContainers = (data.containers || []).slice().reverse(); // 還原為建立順序
+                renderContainerList();
+                refreshContainerSelects();
 
                 populateDatalists();
                 renderRecordsAccordion();
@@ -1639,6 +1767,8 @@
             document.getElementById('actual-recipe-container').innerHTML = '';
             parseAndRenderRecipe('', 'actual-recipe-container', true, false);
 
+            loadContainerRows('');
+
             const resultDiv = document.getElementById('costResult');
             if (resultDiv) resultDiv.style.display = 'none';
             currentCalculatedCostStr = '';
@@ -1674,6 +1804,8 @@
             document.getElementById('result_notes').value = record.result_notes || '';
 
             parseAndRenderRecipe(record.actual_recipe || '', 'actual-recipe-container', true, false);
+            loadContainerRows(record.containers_json || '');
+            lastAutoYield = '';
 
             const resultDiv = document.getElementById('costResult');
             if (resultDiv) resultDiv.style.display = 'none';
@@ -1751,6 +1883,7 @@
                         <div class="row mb-2 small">
                             <div class="col-6"><strong>烤箱:</strong> ${r.oven_spec ? '<span class="badge bg-secondary">' + r.oven_spec + '</span>' : '-'}</div>
                             <div class="col-6"><strong>數量：</strong> ${r.yield_amount || '-'}</div>
+                            ${containerBadgesHtml(r.containers_json)}
                         </div>
                         ${isLoggedIn ? `<div class="alert alert-secondary mb-0 p-2 small"><strong>心得：</strong><br>${formatText(r.result_notes)}</div>` : ''}
                         ${(isLoggedIn && r.total_cost) ? '<div class="d-flex justify-content-between align-items-center mt-2 p-2 border rounded bg-white small"><span class="fw-bold">💰 總成本</span><span class="fw-bold text-success fs-6">$' + r.total_cost + '</span></div>' : ''}
@@ -1861,6 +1994,248 @@
             };
         }
 
+        // ====== 🥣 烘焙容器 ======
+        function escHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        const fmtG = n => (Math.round(n * 10) / 10).toString();
+
+        function parseContainersJson(str) {
+            if (!str) return [];
+            try { const a = JSON.parse(str); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+        }
+
+        function containerBadgesHtml(json) {
+            const list = parseContainersJson(json);
+            if (!list.length) return '';
+            const items = list.map(c => `<span class="badge bg-light text-dark border me-1">🥣 ${escHtml(c.name)} × ${escHtml(c.qty)}</span>`).join('');
+            const dough = list.reduce((s, c) => s + (c.qty * (c.dough_g || 0)), 0);
+            const batter = list.reduce((s, c) => s + (c.qty * (c.batter_g || 0)), 0);
+            const sums = [dough > 0 ? `麵團 ${fmtG(dough)}g` : '', batter > 0 ? `麵糊 ${fmtG(batter)}g` : ''].filter(Boolean).join(' / ');
+            return `<div class="col-12 mt-1"><strong>容器：</strong> ${items}${sums ? `<span class="text-muted">(${sums})</span>` : ''}</div>`;
+        }
+
+        // --- 容器庫管理 ---
+        function openContainerModal() {
+            resetContainerForm();
+            renderContainerList();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('containerModal')).show();
+        }
+
+        function resetContainerForm() {
+            currentContainerId = null;
+            ['ct_name', 'ct_qty', 'ct_gram', 'ct_note'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('ct_type').value = 'dough';
+            document.getElementById('container-form-title').innerText = '➕ 新增容器';
+            document.getElementById('btnSaveContainer').innerText = '💾 儲存容器';
+        }
+
+        function renderContainerList() {
+            const el = document.getElementById('containerList');
+            if (!el) return;
+            if (!dbContainers.length) {
+                el.innerHTML = '<div class="text-muted small">尚未建立任何容器。</div>';
+                return;
+            }
+            el.innerHTML = dbContainers.map(c => `
+                <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2 bg-white">
+                    <div class="small">
+                        <div class="fw-bold">🥣 ${escHtml(c.name)} <span class="badge bg-secondary">擁有 ${escHtml(c.quantity || 0)} 個</span></div>
+                        <div class="text-muted">每個：${parseFloat(c.batter_g) > 0 && !(parseFloat(c.dough_g) > 0) ? `麵糊 ${escHtml(c.batter_g)}g` : `麵團 ${escHtml(c.dough_g || 0)}g`}${c.note ? ` ・ ${escHtml(c.note)}` : ''}</div>
+                    </div>
+                    <div class="text-nowrap">
+                        <button type="button" class="btn btn-sm btn-outline-primary py-0" onclick="editContainer('${escHtml(c.id)}')">編輯</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="deleteContainer('${escHtml(c.id)}')">刪除</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function editContainer(id) {
+            const c = dbContainers.find(x => String(x.id) === String(id));
+            if (!c) return;
+            currentContainerId = c.id;
+            document.getElementById('ct_name').value = c.name || '';
+            document.getElementById('ct_qty').value = c.quantity ?? '';
+            const isBatter = parseFloat(c.batter_g) > 0 && !(parseFloat(c.dough_g) > 0);
+            document.getElementById('ct_type').value = isBatter ? 'batter' : 'dough';
+            document.getElementById('ct_gram').value = (isBatter ? c.batter_g : c.dough_g) ?? '';
+            document.getElementById('ct_note').value = c.note || '';
+            document.getElementById('container-form-title').innerText = '✏️ 編輯容器';
+            document.getElementById('btnSaveContainer').innerText = '💾 更新容器';
+        }
+
+        async function saveContainer() {
+            const name = document.getElementById('ct_name').value.trim();
+            if (!name) return alert('請輸入容器名稱');
+            const isUpdate = !!currentContainerId;
+            const payload = {
+                action: isUpdate ? 'update_container' : 'save_container',
+                id: isUpdate ? String(currentContainerId) : 'ct_' + Date.now(),
+                name,
+                quantity: parseFloat(document.getElementById('ct_qty').value) || 0,
+                dough_g: document.getElementById('ct_type').value === 'dough' ? (parseFloat(document.getElementById('ct_gram').value) || 0) : 0,
+                batter_g: document.getElementById('ct_type').value === 'batter' ? (parseFloat(document.getElementById('ct_gram').value) || 0) : 0,
+                note: document.getElementById('ct_note').value.trim()
+            };
+            const btn = document.getElementById('btnSaveContainer');
+            btn.disabled = true;
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (result.status !== 'success') return alert('⚠️ 儲存失敗：' + (result.message || '未知錯誤'));
+                const { action, ...row } = payload;
+                const idx = dbContainers.findIndex(x => String(x.id) === String(row.id));
+                if (idx > -1) dbContainers[idx] = row; else dbContainers.push(row);
+                resetContainerForm();
+                renderContainerList();
+                refreshContainerSelects();
+                updateContainerSummary();
+            } catch (err) {
+                alert('⚠️ 網路錯誤：' + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function deleteContainer(id) {
+            if (!confirm('確定要刪除這個容器嗎？（既有實驗紀錄不受影響）')) return;
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_container', id }) });
+                const result = await res.json();
+                if (result.status !== 'success') return alert('⚠️ 刪除失敗：' + (result.message || '未知錯誤'));
+                dbContainers = dbContainers.filter(x => String(x.id) !== String(id));
+                if (String(currentContainerId) === String(id)) resetContainerForm();
+                renderContainerList();
+                refreshContainerSelects();
+                updateContainerSummary();
+            } catch (err) {
+                alert('⚠️ 網路錯誤：' + err.message);
+            }
+        }
+
+        // --- 實驗表單容器列 ---
+        function containerOptionsHtml(selected) {
+            return '<option value="">-- 選擇容器 --</option>' +
+                dbContainers.map(c => `<option value="${escHtml(c.id)}" ${String(c.id) === String(selected) ? 'selected' : ''}>${escHtml(c.name)} (${parseFloat(c.batter_g) > 0 && !(parseFloat(c.dough_g) > 0) ? '麵糊 ' + escHtml(c.batter_g) : '麵團 ' + escHtml(c.dough_g || 0)}g)</option>`).join('');
+        }
+
+        function refreshContainerSelects() {
+            document.querySelectorAll('#container-rows .container-row:not(.is-custom) .cr-select').forEach(sel => {
+                const v = sel.value;
+                sel.innerHTML = containerOptionsHtml(v);
+            });
+        }
+
+        function addContainerRow(data = {}) {
+            const custom = !!data.custom;
+            const row = document.createElement('div');
+            row.className = 'container-row border rounded p-2 mb-2 bg-light' + (custom ? ' is-custom' : '');
+            row.innerHTML = custom ? `
+                <div class="row g-1 align-items-end">
+                    <div class="col-12 col-md-4"><input type="text" class="form-control form-control-sm cr-name" placeholder="自訂容器名稱" value="${escHtml(data.name || '')}"></div>
+                    <div class="col-4 col-md-2"><input type="number" min="0" step="1" class="form-control form-control-sm cr-qty" placeholder="個數" value="${escHtml(data.qty ?? '')}"></div>
+                    <div class="col-4 col-md-2"><select class="form-select form-select-sm cr-type"><option value="dough">麵團</option><option value="batter" ${parseFloat(data.batter_g) > 0 && !(parseFloat(data.dough_g) > 0) ? 'selected' : ''}>麵糊</option></select></div>
+                    <div class="col-4 col-md-2"><input type="number" min="0" step="0.1" class="form-control form-control-sm cr-gram" placeholder="g/個" value="${escHtml(data.batter_g > 0 && !(data.dough_g > 0) ? data.batter_g : (data.dough_g || ''))}"></div>
+                    <div class="col-12 col-md-2 text-end"><button type="button" class="btn btn-sm btn-outline-danger py-0 cr-remove">✕ 移除</button></div>
+                </div>` : `
+                <div class="row g-1 align-items-center">
+                    <div class="col-7 col-md-6"><select class="form-select form-select-sm cr-select">${containerOptionsHtml(data.container_id)}</select></div>
+                    <div class="col-3 col-md-3"><input type="number" min="0" step="1" class="form-control form-control-sm cr-qty" placeholder="做幾個" value="${escHtml(data.qty ?? '')}"></div>
+                    <div class="col-2 col-md-3 text-end"><button type="button" class="btn btn-sm btn-outline-danger py-0 cr-remove">✕</button></div>
+                </div>`;
+            row.innerHTML += '<div class="cr-info small text-muted mt-1"></div>';
+            row.addEventListener('input', updateContainerSummary);
+            row.addEventListener('change', updateContainerSummary);
+            row.querySelector('.cr-remove').addEventListener('click', () => { row.remove(); updateContainerSummary(); });
+            document.getElementById('container-rows').appendChild(row);
+            updateContainerSummary();
+        }
+
+        // 取得目前表單的容器資料 (含當下克數快照)
+        function collectContainerRows() {
+            const out = [];
+            document.querySelectorAll('#container-rows .container-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.cr-qty').value);
+                if (row.classList.contains('is-custom')) {
+                    const name = row.querySelector('.cr-name').value.trim();
+                    if (!name && !(qty > 0)) return;
+                    out.push({
+                        container_id: '', name: name || '自訂容器', custom: true, qty: qty || 0,
+                        dough_g: row.querySelector('.cr-type').value === 'dough' ? (parseFloat(row.querySelector('.cr-gram').value) || 0) : 0,
+                        batter_g: row.querySelector('.cr-type').value === 'batter' ? (parseFloat(row.querySelector('.cr-gram').value) || 0) : 0
+                    });
+                } else {
+                    const id = row.querySelector('.cr-select').value;
+                    const c = dbContainers.find(x => String(x.id) === String(id));
+                    if (!c) return;
+                    out.push({
+                        container_id: String(c.id), name: c.name, custom: false, qty: qty || 0,
+                        dough_g: parseFloat(c.dough_g) || 0, batter_g: parseFloat(c.batter_g) || 0
+                    });
+                }
+            });
+            return out;
+        }
+
+        function updateContainerSummary() {
+            const wrap = document.getElementById('container-rows');
+            if (!wrap) return;
+            // 各列即時資訊
+            wrap.querySelectorAll('.container-row').forEach(row => {
+                const info = row.querySelector('.cr-info');
+                const qty = parseFloat(row.querySelector('.cr-qty').value) || 0;
+                let dough = 0, batter = 0, owned = null;
+                if (row.classList.contains('is-custom')) {
+                    const g = parseFloat(row.querySelector('.cr-gram').value) || 0;
+                    const isB = row.querySelector('.cr-type').value === 'batter';
+                    dough = isB ? 0 : g;
+                    batter = isB ? g : 0;
+                } else {
+                    const c = dbContainers.find(x => String(x.id) === String(row.querySelector('.cr-select').value));
+                    if (c) { dough = parseFloat(c.dough_g) || 0; batter = parseFloat(c.batter_g) || 0; owned = parseFloat(c.quantity) || 0; }
+                }
+                const parts = [];
+                if (dough > 0) parts.push(`麵團 ${qty} × ${fmtG(dough)}g = <b>${fmtG(qty * dough)}g</b>`);
+                if (batter > 0) parts.push(`麵糊 ${qty} × ${fmtG(batter)}g = <b>${fmtG(qty * batter)}g</b>`);
+                let html = parts.join(' ｜ ');
+                if (owned !== null && owned > 0 && qty > owned) html += ` <span class="text-danger fw-bold">⚠️ 超過擁有數量 (${owned} 個)</span>`;
+                info.innerHTML = html;
+            });
+
+            const list = collectContainerRows();
+            document.getElementById('container-empty-hint').style.display = wrap.children.length ? 'none' : 'block';
+            const sumEl = document.getElementById('container-summary');
+            const pieces = list.reduce((s, c) => s + c.qty, 0);
+            if (!list.length || pieces <= 0) {
+                sumEl.style.display = 'none';
+                return;
+            }
+            const dough = list.reduce((s, c) => s + c.qty * c.dough_g, 0);
+            const batter = list.reduce((s, c) => s + c.qty * c.batter_g, 0);
+            sumEl.style.display = 'block';
+            sumEl.innerHTML = `<div class="alert alert-success py-2 mb-0 small">
+                📊 <b>合計</b>：預計 <b>${pieces}</b> 個成品
+                ${dough > 0 ? ` ｜ 需要麵團 <b>${fmtG(dough)}g</b>` : ''}
+                ${batter > 0 ? ` ｜ 需要麵糊 <b>${fmtG(batter)}g</b>` : ''}</div>`;
+
+            // 成品個數：欄位為空或仍是上次自動帶入的值時，自動帶入預計個數
+            const yEl = document.getElementById('yield_amount');
+            if (yEl && (yEl.value === '' || yEl.value === lastAutoYield)) {
+                yEl.value = String(pieces);
+                lastAutoYield = String(pieces);
+            }
+        }
+
+        function loadContainerRows(json) {
+            document.getElementById('container-rows').innerHTML = '';
+            parseContainersJson(json).forEach(c => {
+                const exists = !c.custom && dbContainers.some(x => String(x.id) === String(c.container_id));
+                if (exists) addContainerRow({ container_id: c.container_id, qty: c.qty });
+                else addContainerRow({ custom: true, name: c.name, qty: c.qty, dough_g: c.dough_g, batter_g: c.batter_g });
+            });
+            updateContainerSummary();
+        }
+
         // 頁面初始化
         updateUIForLoginState();
         loadData();
@@ -1910,7 +2285,8 @@
                         yield_amount: document.getElementById('yield_amount').value,
                         result_notes: document.getElementById('result_notes').value,
                         total_cost: currentCalculatedCostStr || '',
-                        oven_spec: document.getElementById('oven_spec').value
+                        oven_spec: document.getElementById('oven_spec').value,
+                        containers_json: JSON.stringify(collectContainerRows())
                     };
 
                     try {
@@ -1946,24 +2322,22 @@
             }
         });
 
-        // 計算食材成本
+        // 計算食材與包材成本
         async function calculateCost(btn) {
             const resultDiv = document.getElementById('costResult');
             const rows = document.querySelectorAll('#actual-recipe-container .recipe-row');
 
             if (!rows.length) {
                 resultDiv.style.display = 'block';
-                resultDiv.innerHTML = '<div class="alert alert-warning p-2 small">請先填寫實驗配方食材。</div>';
+                resultDiv.innerHTML = '<div class="alert alert-warning p-2 small">請先填寫實驗配方食材或包材。</div>';
                 return;
             }
 
-            // 先顯示連線中狀態
             const originalText = btn.innerText;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 取得最新資料中...';
             btn.disabled = true;
 
             try {
-                // 去撈最新的資料庫
                 const response = await fetch(API_URL);
                 const data = await response.json();
                 dbPurchases = data.purchases || [];
@@ -1977,95 +2351,150 @@
             btn.innerHTML = originalText;
             btn.disabled = false;
 
-            let tableRows = '';
-            let totalCost = 0;
+            let ingredientRows = '';
+            let packagingRows = '';
+            let ingredientCostTotal = 0;
+            let packagingCostTotal = 0;
             let hasWarning = false;
 
             rows.forEach(row => {
+                const sec = row.closest('.recipe-section');
+                const secTitleName = sec?.querySelector('.section-title-name')?.value?.trim() || '';
+                const isPackaging = secTitleName.includes('包材') || secTitleName.includes('📦');
+
                 const name = row.querySelector('.ing-name')?.value?.trim();
-                const weight = parseFloat(row.querySelector('.ing-weight')?.value);
+                const weightOrCount = parseFloat(row.querySelector('.ing-weight')?.value);
                 const brand = row.querySelector('.ing-brand')?.value?.trim();
-                if (!name || !weight) return;
+                if (!name || isNaN(weightOrCount) || weightOrCount <= 0) return;
 
                 const label = brand ? `${name} (${brand})` : name;
 
-                const eggPricing = resolveEggPricing(name, brand, dbPurchases);
-
-                if (eggPricing) {
-                    const cost = weight * eggPricing.unitPrice;
-                    totalCost += cost;
-                    tableRows += `
-                        <tr>
-                            <td>${label}</td>
-                            <td class="text-end">${weight}g</td>
-                            <td class="text-end text-muted small">${eggPricing.priceTag}</td>
-                            <td class="text-end fw-bold text-success">$${cost.toFixed(1)}</td>
-                        </tr>`;
-                } else {
+                if (isPackaging) {
                     const validPurchase = p =>
                         p.ingredient && p.ingredient.trim() === name &&
                         parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
 
-                    // 有品牌則優先配對食材+品牌，無品牌則取最新一筆
                     const purchase = brand
                         ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
                         : dbPurchases.find(p => validPurchase(p));
 
                     if (purchase) {
                         const unitPrice = parseFloat(purchase.price) / parseFloat(purchase.weight);
-                        const cost = weight * unitPrice;
-                        totalCost += cost;
-                        tableRows += `
+                        const cost = weightOrCount * unitPrice;
+                        packagingCostTotal += cost;
+                        const unitLabel = purchase.unit || '個';
+                        packagingRows += `
                             <tr>
-                                <td>${label}</td>
-                                <td class="text-end">${weight}g</td>
-                                <td class="text-end text-muted small">$${purchase.price}/${purchase.weight}g</td>
-                                <td class="text-end fw-bold text-success">$${cost.toFixed(1)}</td>
+                                <td>📦 ${label}</td>
+                                <td class="text-end">${weightOrCount}${unitLabel}</td>
+                                <td class="text-end text-muted small">$${purchase.price}/${purchase.weight}${unitLabel}</td>
+                                <td class="text-end fw-bold text-primary">$${cost.toFixed(1)}</td>
                             </tr>`;
                     } else {
                         hasWarning = true;
-                        tableRows += `
+                        packagingRows += `
                             <tr class="table-warning">
-                                <td>${label}</td>
-                                <td class="text-end">${weight}g</td>
+                                <td>📦 ${label}</td>
+                                <td class="text-end">${weightOrCount}個</td>
                                 <td class="text-end text-muted small">—</td>
                                 <td class="text-end">
                                     <button type="button" class="btn btn-sm btn-outline-warning py-0 px-1" style="font-size:0.75rem;" onclick="openPurchaseModal('${(name || '').replace(/'/g, "\\'")}', '${(brand || '').replace(/'/g, "\\'")}')">➕ 補新增</button>
                                 </td>
                             </tr>`;
                     }
+                } else {
+                    const eggPricing = resolveEggPricing(name, brand, dbPurchases);
+                    if (eggPricing) {
+                        const cost = weightOrCount * eggPricing.unitPrice;
+                        ingredientCostTotal += cost;
+                        ingredientRows += `
+                            <tr>
+                                <td>🍞 ${label}</td>
+                                <td class="text-end">${weightOrCount}g</td>
+                                <td class="text-end text-muted small">${eggPricing.priceTag}</td>
+                                <td class="text-end fw-bold text-success">$${cost.toFixed(1)}</td>
+                            </tr>`;
+                    } else {
+                        const validPurchase = p =>
+                            p.ingredient && p.ingredient.trim() === name &&
+                            parseFloat(p.weight) > 0 && parseFloat(p.price) > 0;
+
+                        const purchase = brand
+                            ? dbPurchases.find(p => validPurchase(p) && p.brand && p.brand.trim() === brand)
+                            : dbPurchases.find(p => validPurchase(p));
+
+                        if (purchase) {
+                            const unitPrice = parseFloat(purchase.price) / parseFloat(purchase.weight);
+                            const cost = weightOrCount * unitPrice;
+                            ingredientCostTotal += cost;
+                            const unitLabel = purchase.unit || 'g';
+                            ingredientRows += `
+                                <tr>
+                                    <td>🍞 ${label}</td>
+                                    <td class="text-end">${weightOrCount}${unitLabel}</td>
+                                    <td class="text-end text-muted small">$${purchase.price}/${purchase.weight}${unitLabel}</td>
+                                    <td class="text-end fw-bold text-success">$${cost.toFixed(1)}</td>
+                                </tr>`;
+                        } else {
+                            hasWarning = true;
+                            ingredientRows += `
+                                <tr class="table-warning">
+                                    <td>🍞 ${label}</td>
+                                    <td class="text-end">${weightOrCount}g</td>
+                                    <td class="text-end text-muted small">—</td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-warning py-0 px-1" style="font-size:0.75rem;" onclick="openPurchaseModal('${(name || '').replace(/'/g, "\\'")}', '${(brand || '').replace(/'/g, "\\'")}')">➕ 補新增</button>
+                                    </td>
+                                </tr>`;
+                        }
+                    }
                 }
             });
 
-            if (!tableRows) {
-                resultDiv.style.display = 'block';
-                resultDiv.innerHTML = '<div class="alert alert-warning p-2 small">請填寫食材名稱及克數。</div>';
-                return;
-            }
+            const grandTotal = ingredientCostTotal + packagingCostTotal;
+            currentCalculatedCostStr = grandTotal.toFixed(1);
 
-            // 儲存計算結果，供儲存實驗紀錄時寫入 payload
-            currentCalculatedCostStr = totalCost.toFixed(1);
+            const yieldInput = parseFloat(document.getElementById('yield_amount')?.value);
+            const perPieceCostStr = (!isNaN(yieldInput) && yieldInput > 0)
+                ? `<div class="text-muted small mt-1">💡 單顆/單份全包成本: <span class="fw-bold text-primary">$${(grandTotal / yieldInput).toFixed(1)}</span> / 份 (成品 ${yieldInput} 份)</div>`
+                : '';
 
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = `
-                <div class="p-2 border rounded bg-white">
-                    <div class="section-title mb-2">💰 食材成本明細</div>
+                <div class="p-3 border rounded bg-white shadow-sm">
+                    <div class="section-title mb-2 fw-bold text-primary">💰 成本精算明細 (食材 + 包材)</div>
                     <table class="table table-sm mb-2" style="font-size:0.85rem;">
                         <thead class="table-light">
                             <tr>
-                                <th>食材</th>
+                                <th>品項/項目</th>
                                 <th class="text-end">用量</th>
                                 <th class="text-end">單價參考</th>
-                                <th class="text-end">成本</th>
+                                <th class="text-end">小計金額</th>
                             </tr>
                         </thead>
-                        <tbody>${tableRows}</tbody>
+                        <tbody>
+                            ${ingredientRows}
+                            ${packagingRows}
+                        </tbody>
                     </table>
-                    <div class="d-flex justify-content-between align-items-center pt-1 border-top">
-                        <span class="fw-bold">總食材成本</span>
-                        <span class="fw-bold text-success fs-6">$${totalCost.toFixed(1)}</span>
+                    
+                    <div class="border-top pt-2">
+                        <div class="d-flex justify-content-between align-items-center small text-secondary">
+                            <span>🍞 食材成本小計:</span>
+                            <span class="fw-bold text-dark">$${ingredientCostTotal.toFixed(1)}</span>
+                        </div>
+                        ${packagingCostTotal > 0 ? `
+                        <div class="d-flex justify-content-between align-items-center small text-secondary mt-1">
+                            <span>📦 包材成本小計:</span>
+                            <span class="fw-bold text-primary">$${packagingCostTotal.toFixed(1)}</span>
+                        </div>` : ''}
+                        <div class="d-flex justify-content-between align-items-center pt-2 mt-1 border-top">
+                            <span class="fw-bold fs-6">💰 全案總成本 (食材 + 包材):</span>
+                            <span class="fw-bold text-success fs-5">$${grandTotal.toFixed(1)}</span>
+                        </div>
+                        ${perPieceCostStr}
                     </div>
-                    ${hasWarning ? '<div class="text-muted small mt-1">⚠️ 黃底列代表購買記錄中查無此食材，請先新增購買記錄。</div>' : ''}
+                    ${hasWarning ? '<div class="text-muted small mt-2">⚠️ 黃底列代表購買記錄中查無此項目，請先點擊「補新增」建立採買紀錄。</div>' : ''}
                     <div class="mt-2 text-center">
                         <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="openPurchaseModal()">🛋️ 開啟購買紀錄管理 (新增/修正價錢)</button>
                     </div>
@@ -2090,6 +2519,7 @@
                 date: isUpdate ? undefined : new Date().toLocaleString('zh-TW', { hour12: false }), // 更新時不覆蓋原時間
                 ingredient,
                 weight: document.getElementById('pur_weight').value,
+                unit: document.getElementById('pur_unit')?.value?.trim() || 'g',
                 price: document.getElementById('pur_price').value,
                 brand: document.getElementById('pur_brand').value,
                 store: document.getElementById('pur_store').value
@@ -2151,6 +2581,7 @@
             document.getElementById('pur_ingredient').value = p.ingredient || '';
             document.getElementById('pur_brand').value = p.brand || '';
             document.getElementById('pur_weight').value = p.weight || '';
+            if (document.getElementById('pur_unit')) document.getElementById('pur_unit').value = p.unit || 'g';
             document.getElementById('pur_price').value = p.price || '';
             document.getElementById('pur_store').value = p.store || '';
             document.getElementById('btnSavePurchase').innerText = '💾 更新此筆購買紀錄';
