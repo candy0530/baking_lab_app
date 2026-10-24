@@ -207,25 +207,33 @@
             <option value="盒"></option>
             <option value="件"></option>
         </datalist>
-        <h5 class="mb-3 text-secondary mt-3">🗂️ 實驗紀錄總覽庫</h5>
-        <div id="recordsContainer" class="accordion mb-4"></div>
+        <!-- 分頁導覽：點到哪一頁才載入哪一頁 -->
+        <ul class="nav nav-pills nav-fill mb-3 mt-3 bg-white rounded shadow-sm p-1" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-recipe-btn" data-bs-toggle="pill" data-bs-target="#tab-recipe" type="button" role="tab">📝 經典食譜管理</button>
+            </li>
+            <li class="nav-item auth-only" role="presentation">
+                <button class="nav-link" id="tab-records-btn" data-bs-toggle="pill" data-bs-target="#tab-records" type="button" role="tab">🗂️ 實驗紀錄總覽庫</button>
+            </li>
+            <li class="nav-item auth-only" role="presentation">
+                <button class="nav-link" id="tab-experiment-btn" data-bs-toggle="pill" data-bs-target="#tab-experiment" type="button" role="tab">🧪 實驗紀錄</button>
+            </li>
+        </ul>
 
+        <div class="tab-content">
+        <div class="tab-pane fade" id="tab-records" role="tabpanel">
+            <div id="recordsContainer" class="accordion mb-4"></div>
+        </div>
 
-        <!-- 經典原始食譜管理區塊 (預設可摺疊) -->
+        <!-- 經典原始食譜管理 -->
+        <div class="tab-pane fade show active" id="tab-recipe" role="tabpanel">
         <div class="card mb-4 border shadow-sm" id="admin-recipe-section">
-            <div class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center"
-                style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#masterRecipeCollapse"
-                aria-expanded="false" aria-controls="masterRecipeCollapse">
-                <div class="d-flex align-items-center gap-2">
-                    <h5 class="card-title mb-0 text-primary fw-bold">📝 經典原始食譜管理 (Master Recipe)</h5>
-                    <span class="badge bg-secondary-subtle text-secondary border small">點擊可展開/折疊</span>
-                </div>
-                <button class="btn btn-sm btn-outline-primary" type="button">
-                    <span class="collapse-text">🔽 展開配方區塊</span>
-                </button>
+            <div class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 text-primary fw-bold">📝 經典原始食譜管理 (Master Recipe)</h5>
+                <button class="btn btn-sm btn-outline-success auth-only" type="button" onclick="showMainTab('tab-experiment-btn')">🧪 前往實驗紀錄</button>
             </div>
 
-            <div class="collapse" id="masterRecipeCollapse">
+            <div id="masterRecipeBody">
                 <div class="card-body pt-0">
                     <div class="mb-4 position-relative">
                         <div class="row g-2">
@@ -293,7 +301,11 @@
                 </div>
             </div>
         </div>
+        </div>
 
+        <!-- 實驗紀錄 -->
+        <div class="tab-pane fade" id="tab-experiment" role="tabpanel">
+                <div class="text-muted small mb-2">💡 從「實驗紀錄總覽庫」點選一筆紀錄，或在「經典食譜管理」選擇配方後，即可在此新增 / 編輯實驗。</div>
                 <div id="record-selection-area" class="mb-4 p-3 border rounded shadow-sm auth-only"
                     style="display: none; background-color: #e9ecef;">
                     <button class="btn btn-primary w-100 mb-3 auth-only" onclick="startNewRecord()">➕
@@ -396,8 +408,9 @@
                         </div>
                     </div>
                 </form>
-            </div>
         </div>
+        </div>
+    </div>
 
 
         <!-- 購買紀錄 Modal 對話框 -->
@@ -722,6 +735,9 @@
 
             const adminPurchase = document.getElementById('admin-purchase-section');
             if (adminPurchase) adminPurchase.style.display = isLoggedIn ? 'block' : 'none';
+
+            // 未登入時只能使用「經典食譜管理」分頁，其餘實驗相關分頁需登入
+            if (!isLoggedIn) showMainTab('tab-recipe-btn');
 
             if (dbRecords.length > 0 || dbRecipes.length > 0) renderRecordsAccordion();
         }
@@ -1692,13 +1708,9 @@
         }
 
         // 選擇配方後，帶入原始配方並顯示歷史紀錄選項
-        function loadRecipeDetails(fullName, keepCollapsed = false) {
-            // 自動展開經典配方摺疊區塊（從實驗紀錄進入時則保持摺疊）
-            const collapseEl = document.getElementById('masterRecipeCollapse');
-            if (collapseEl) {
-                const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
-                if (keepCollapsed) bsCollapse.hide(); else bsCollapse.show();
-            }
+        function loadRecipeDetails(fullName, switchToRecipeTab = true) {
+            // 切換到經典食譜分頁（從實驗紀錄進入時由呼叫端自行切到實驗分頁）
+            if (switchToRecipeTab) showMainTab('tab-recipe-btn');
 
             const recipe = dbRecipes.find(r => r.recipe_name === fullName);
             if (recipe) {
@@ -1829,12 +1841,10 @@
             const record = dbRecords.find(r => String(r.id) === String(recordId));
             if (!record) return alert('找不到該筆實驗紀錄');
 
-            loadRecipeDetails(record.recipe_name, true);
+            loadRecipeDetails(record.recipe_name, false);
             loadHistoricalRecord(record);
-            // 等配方區塊收合動畫結束後，再導到實驗紀錄表單
-            setTimeout(() => {
-                document.getElementById('recordForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 400);
+            showMainTab('tab-experiment-btn');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // 載入指定歷史實驗紀錄至表單
@@ -1866,7 +1876,84 @@
         }
 
         // 渲染手風琴紀錄 (依主品項分組，呈現版本標籤與升格按鈕)
+        // 將配方文字（## 區塊標題 / 名稱 | % | 克數 | (品牌) | 單價）轉成表格 HTML
+        function renderRecipeTableHtml(recipeStr) {
+            if (!recipeStr) return '';
+            const sections = [];
+            let cur = null;
+            String(recipeStr).split('\n').forEach(line => {
+                if (!line.trim()) return;
+                if (line.startsWith('## ')) {
+                    cur = { title: line.replace('## ', '').trim(), rows: [] };
+                    sections.push(cur);
+                    return;
+                }
+                if (!cur) { cur = { title: '', rows: [] }; sections.push(cur); }
+                const parts = line.split(' | ');
+                const row = { name: parts[0] || '', pct: '', weight: '', brand: '', price: '' };
+                parts.slice(1).forEach(p => {
+                    if (p.includes('$')) row.price = p;
+                    else if (p.includes('%')) row.pct = p;
+                    else if (p.includes('g') && !p.includes('/')) row.weight = p.replace('g', '');
+                    else if (p.includes('(')) row.brand = p.replace(/[()]/g, '');
+                });
+                cur.rows.push(row);
+            });
+            return sections.map(sec => {
+                const hasPct = sec.rows.some(r => r.pct);
+                const hasBrand = sec.rows.some(r => r.brand);
+                const hasPrice = sec.rows.some(r => r.price);
+                const total = sec.rows.reduce((sum, r) => sum + (parseFloat(r.weight) || 0), 0);
+                const body = sec.rows.map(r => `
+                    <tr>
+                        <td>${escHtml(r.name)}</td>
+                        ${hasPct ? `<td class="text-end text-muted">${escHtml(r.pct)}</td>` : ''}
+                        <td class="text-end fw-bold">${r.weight ? escHtml(r.weight) + ' g' : ''}</td>
+                        ${hasBrand ? `<td class="text-muted">${escHtml(r.brand)}</td>` : ''}
+                        ${hasPrice ? `<td class="text-muted text-nowrap">${escHtml(r.price)}</td>` : ''}
+                    </tr>`).join('');
+                return `
+                <div class="mb-2">
+                    ${sec.title ? `<div class="fw-bold text-secondary mb-1">${escHtml(sec.title)}</div>` : ''}
+                    <table class="table table-sm table-bordered bg-white mb-0" style="font-size:0.85rem;">
+                        <thead class="table-light"><tr>
+                            <th>食材</th>${hasPct ? '<th class="text-end">%</th>' : ''}<th class="text-end">克數</th>${hasBrand ? '<th>品牌</th>' : ''}${hasPrice ? '<th>單價</th>' : ''}
+                        </tr></thead>
+                        <tbody>${body}</tbody>
+                        ${total > 0 ? `<tfoot><tr class="table-light"><td class="fw-bold">合計</td>${hasPct ? '<td></td>' : ''}<td class="text-end fw-bold">${fmtG(total)} g</td>${hasBrand ? '<td></td>' : ''}${hasPrice ? '<td></td>' : ''}</tr></tfoot>` : ''}
+                    </table>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleRecordDetail(id) {
+            const row = document.getElementById('record-detail-' + id);
+            if (row) row.classList.toggle('d-none');
+        }
+
+        let recordsDirty = true;
         function renderRecordsAccordion() {
+            recordsDirty = true;
+            const pane = document.getElementById('tab-records');
+            if (pane && pane.classList.contains('active')) {
+                recordsDirty = false;
+                renderRecordsAccordionNow();
+            }
+        }
+
+        function showMainTab(btnId) {
+            const btn = document.getElementById(btnId);
+            if (btn) bootstrap.Tab.getOrCreateInstance(btn).show();
+        }
+
+        document.addEventListener('shown.bs.tab', function (e) {
+            if (e.target.id === 'tab-records-btn' && recordsDirty) {
+                recordsDirty = false;
+                renderRecordsAccordionNow();
+            }
+        });
+
+        function renderRecordsAccordionNow() {
             const container = document.getElementById('recordsContainer');
             container.innerHTML = '';
 
@@ -1903,40 +1990,61 @@
                     return `<button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 me-1 mb-1" onclick="loadRecipeDetails('${v.recipe_name}')">📖 ${versionName}</button>`;
                 }).join('');
 
-                let recordsHTML = group.records.map(r => {
-                    const isLoggedIn = checkAuth();
+                const isLoggedIn = checkAuth();
+                const dash = '<span class="text-muted">-</span>';
+                const rowsHtml = group.records.map(r => {
                     const { versionName } = parseRecipeFullName(r.recipe_name);
-
+                    const cl = parseContainersJson(r.containers_json);
+                    const containersCell = cl.length
+                        ? cl.map(c => `<span class="badge bg-light text-dark border me-1 mb-1">${escHtml(c.name)} ×${escHtml(c.qty)}</span>`).join('')
+                        : dash;
+                    const temp = (r.actual_temp_up || r.actual_temp_down)
+                        ? `<span class="text-danger">${escHtml(r.actual_temp_up || '-')}/${escHtml(r.actual_temp_down || '-')}</span><sup>°C</sup>` : dash;
+                    const rid = escHtml(r.id);
                     return `
-                    <div class="record-card p-3 mb-3 border rounded shadow-sm position-relative" style="${isLoggedIn ? 'cursor: pointer;' : ''}" ${isLoggedIn ? `onclick="openRecordFromAccordion('${r.id}')"` : ''} title="${isLoggedIn ? '點擊載入此紀錄' : ''}">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <span class="text-secondary fw-bold small me-2">🕒 ${formatDateStr(r.date)}</span>
-                                <span class="badge bg-secondary">${versionName}</span>
-                                ${r.experiment_purpose ? '<span class="badge bg-info text-dark ms-1">' + r.experiment_purpose + '</span>' : ''}
+                    <tr class="record-row" style="cursor:pointer;" onclick="toggleRecordDetail('${rid}')" title="點擊展開 / 收合詳細內容">
+                        <td class="text-nowrap small">${escHtml(formatDateStr(r.date))}</td>
+                        <td><span class="badge bg-secondary">${escHtml(versionName)}</span></td>
+                        <td>${r.experiment_purpose ? `<span class="badge bg-info text-dark">${escHtml(r.experiment_purpose)}</span>` : dash}</td>
+                        <td class="text-nowrap small">${temp}</td>
+                        <td class="text-nowrap small">${r.actual_time ? escHtml(r.actual_time) + ' 分' : dash}</td>
+                        <td class="small">${r.oven_spec ? escHtml(r.oven_spec) : dash}</td>
+                        <td class="small">${containersCell}</td>
+                        <td class="text-nowrap fw-bold">${r.yield_amount ? escHtml(r.yield_amount) : dash}</td>
+                        ${isLoggedIn ? `<td class="text-nowrap text-success fw-bold small">${r.total_cost ? '$' + escHtml(r.total_cost) : dash}</td>` : ''}
+                        ${isLoggedIn ? `<td class="text-nowrap text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" onclick="event.stopPropagation(); openRecordFromAccordion('${rid}')">✏️ 編輯</button>
+                            <button type="button" class="btn btn-sm btn-outline-warning py-0 px-2" onclick="event.stopPropagation(); promoteRecordToRecipeVersion('${rid}')" title="升格為經典新版本">🌟</button>
+                        </td>` : ''}
+                    </tr>
+                    <tr class="record-detail d-none" id="record-detail-${rid}">
+                        <td colspan="${isLoggedIn ? 10 : 8}" class="bg-light">
+                            <div class="row g-2 small">
+                                <div class="col-md-6">
+                                    <div class="fw-bold mb-1">🧪 實驗實際克數</div>
+                                    ${renderRecipeTableHtml(r.actual_recipe) || '<div class="bg-white border rounded p-2">' + dash + '</div>'}
+                                </div>
+                                ${isLoggedIn ? `<div class="col-md-6">
+                                    <div class="fw-bold mb-1">📝 心得</div>
+                                    <div class="bg-white border rounded p-2">${formatText(r.result_notes) || dash}</div>
+                                </div>` : ''}
                             </div>
-                            ${isLoggedIn ? `
-                            <div>
-                                <button type="button" class="btn btn-sm btn-link p-0 text-primary me-2 fw-bold" onclick="event.stopPropagation(); openRecordFromAccordion('${r.id}')" style="font-size:0.8rem; text-decoration:none;">✏️ 載入編輯</button>
-                                <button type="button" class="btn btn-sm btn-link p-0 text-warning fw-bold" onclick="event.stopPropagation(); promoteRecordToRecipeVersion('${r.id}')" style="font-size:0.8rem; text-decoration:none;">🌟 升格為經典新版本</button>
-                            </div>
-                            ` : ''}
-                        </div>
-                        <div class="bg-light p-2 rounded mb-2 small" style="font-family: monospace;"><strong>🧪 實驗實際克數：</strong><br>${formatText(r.actual_recipe)}</div>
-                        <div class="row mb-2 small">
-                            <div class="col-4"><strong>上火:</strong> <span class="text-danger">${r.actual_temp_up ? r.actual_temp_up + '<sup>o</sup>C' : '-'}</span></div>
-                            <div class="col-4"><strong>下火:</strong> <span class="text-danger">${r.actual_temp_down ? r.actual_temp_down + '<sup>o</sup>C' : '-'}</span></div>
-                            <div class="col-4"><strong>時間:</strong> ${r.actual_time ? r.actual_time + ' 分鐘' : '-'}</div>
-                        </div>
-                        <div class="row mb-2 small">
-                            <div class="col-6"><strong>烤箱:</strong> ${r.oven_spec ? '<span class="badge bg-secondary">' + r.oven_spec + '</span>' : '-'}</div>
-                            <div class="col-6"><strong>數量：</strong> ${r.yield_amount || '-'}</div>
-                            ${containerBadgesHtml(r.containers_json)}
-                        </div>
-                        ${isLoggedIn ? `<div class="alert alert-secondary mb-0 p-2 small"><strong>心得：</strong><br>${formatText(r.result_notes)}</div>` : ''}
-                        ${(isLoggedIn && r.total_cost) ? '<div class="d-flex justify-content-between align-items-center mt-2 p-2 border rounded bg-white small"><span class="fw-bold">💰 總成本</span><span class="fw-bold text-success fs-6">$' + r.total_cost + '</span></div>' : ''}
-                    </div>`;
+                        </td>
+                    </tr>`;
                 }).join('');
+
+                const recordsHTML = group.records.length ? `
+                    <div class="table-responsive bg-white border rounded">
+                        <table class="table table-hover table-sm align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>日期</th><th>版本</th><th>目的</th><th>上/下火</th><th>時間</th><th>烤箱</th><th>容器</th><th>成品數</th>
+                                    ${isLoggedIn ? '<th>成本</th><th></th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>` : '';
 
                 const item = document.createElement('div');
                 item.className = 'accordion-item border-0 mb-2 shadow-sm rounded';
@@ -2289,17 +2397,6 @@
         loadData();
 
         document.addEventListener('DOMContentLoaded', function () {
-            const collapseEl = document.getElementById('masterRecipeCollapse');
-            if (collapseEl) {
-                collapseEl.addEventListener('shown.bs.collapse', function () {
-                    const btnText = document.querySelector('#admin-recipe-section .collapse-text');
-                    if (btnText) btnText.innerText = '🔼 折疊配方區塊';
-                });
-                collapseEl.addEventListener('hidden.bs.collapse', function () {
-                    const btnText = document.querySelector('#admin-recipe-section .collapse-text');
-                    if (btnText) btnText.innerText = '🔽 展開配方區塊';
-                });
-            }
             const recordForm = document.getElementById('recordForm');
             if (recordForm) {
                 recordForm.addEventListener('submit', async function (e) {
