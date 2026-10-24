@@ -1027,7 +1027,51 @@
             }
 
             containerRows.appendChild(row);
+            updateEggHint(row);
         }
+
+        // 🥚 蛋類依克數推估顆數 (去殼：全蛋約50g、蛋黃約17g、蛋白約34g)
+        const EGG_SPECS = [
+            { names: ['蛋黃', '蛋黃液'], g: 17, label: '蛋黃' },
+            { names: ['蛋白', '蛋白液'], g: 34, label: '蛋白' },
+            { names: ['全蛋', '全蛋液', '蛋液', '雞蛋', '蛋', '中型蛋'], g: 50, label: '全蛋' }
+        ];
+
+        function updateEggHint(row) {
+            const nameInput = row.querySelector('.ing-name');
+            const weightInput = row.querySelector('.ing-weight');
+            if (!nameInput || !weightInput || row.querySelector('.ing-pct') === null) return;
+            const col = weightInput.parentElement;
+            let hint = col.querySelector('.egg-hint');
+            const name = nameInput.value.trim();
+            const spec = EGG_SPECS.find(s => s.names.includes(name));
+            const grams = parseFloat(weightInput.value);
+            if (!spec || isNaN(grams) || grams <= 0) {
+                if (hint) hint.remove();
+                return;
+            }
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.className = 'egg-hint text-muted';
+                hint.style.fontSize = '0.75rem';
+                col.appendChild(hint);
+            }
+            const n = grams / spec.g;
+            const rounded = Math.round(n * 10) / 10;
+            hint.innerText = `🥚 約 ${rounded} 顆${spec.label === '全蛋' ? '' : spec.label}`;
+            hint.title = `以${spec.label}每顆約 ${spec.g}g (去殼) 推估`;
+        }
+
+        document.addEventListener('input', function (e) {
+            if (e.target.matches && e.target.matches('.recipe-row .ing-name, .recipe-row .ing-weight')) {
+                updateEggHint(e.target.closest('.recipe-row'));
+            }
+        });
+        document.addEventListener('change', function (e) {
+            if (e.target.matches && e.target.matches('.recipe-row .ing-name')) {
+                updateEggHint(e.target.closest('.recipe-row'));
+            }
+        });
 
         // 將配方表單轉成文字 (支援多區塊)
         function compileRecipe(containerId, hasBrand) {
@@ -1648,12 +1692,12 @@
         }
 
         // 選擇配方後，帶入原始配方並顯示歷史紀錄選項
-        function loadRecipeDetails(fullName) {
-            // 自動展開經典配方摺疊區塊
+        function loadRecipeDetails(fullName, keepCollapsed = false) {
+            // 自動展開經典配方摺疊區塊（從實驗紀錄進入時則保持摺疊）
             const collapseEl = document.getElementById('masterRecipeCollapse');
             if (collapseEl) {
                 const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
-                bsCollapse.show();
+                if (keepCollapsed) bsCollapse.hide(); else bsCollapse.show();
             }
 
             const recipe = dbRecipes.find(r => r.recipe_name === fullName);
@@ -1785,8 +1829,12 @@
             const record = dbRecords.find(r => String(r.id) === String(recordId));
             if (!record) return alert('找不到該筆實驗紀錄');
 
-            loadRecipeDetails(record.recipe_name);
+            loadRecipeDetails(record.recipe_name, true);
             loadHistoricalRecord(record);
+            // 等配方區塊收合動畫結束後，再導到實驗紀錄表單
+            setTimeout(() => {
+                document.getElementById('recordForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 400);
         }
 
         // 載入指定歷史實驗紀錄至表單
