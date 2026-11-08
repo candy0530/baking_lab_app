@@ -744,26 +744,62 @@
 
         function showLoginModal() {
             document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('login-username').focus();
         }
 
         function hideLoginModal() {
             document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('login-error').style.display = 'none';
         }
 
-        function handleLogin() {
-            const usernameInput = document.getElementById('login-username').value.trim();
-            const passwordInput = document.getElementById('login-password').value.trim();
-            const errorDiv = document.getElementById('login-error');
+        // Enter 鍵登入
+        document.getElementById('login-password').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') handleLogin();
+        });
+        document.getElementById('login-username').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') document.getElementById('login-password').focus();
+        });
 
-            if (usernameInput === 'chiamei' && passwordInput === '0530') {
-                localStorage.setItem('baking_lab_auth', 'true');
-                errorDiv.innerText = '';
-                hideLoginModal();
-                updateUIForLoginState();
-                alert('🔓 登入成功！已解除所有維護與編輯鎖定。');
-            } else {
-                errorDiv.innerText = '❌ 帳號或密碼錯誤，請重新輸入';
+        async function handleLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            const errDiv = document.getElementById('login-error');
+            const btn = document.getElementById('btn-login');
+
+            if (!username || !password) {
+                errDiv.style.display = 'block';
+                errDiv.textContent = '請輸入帳號和密碼';
+                return;
             }
+
+            btn.disabled = true;
+            btn.textContent = '驗證中...';
+            errDiv.style.display = 'none';
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login', username: username, password: password })
+                });
+                const result = await res.json();
+
+                if (result.status === 'success' && result.message === 'login_ok') {
+                    localStorage.setItem('baking_lab_auth', 'true');
+                    sessionStorage.setItem('baking_lab_auth', 'true');
+                    hideLoginModal();
+                    updateUIForLoginState();
+                } else {
+                    errDiv.style.display = 'block';
+                    errDiv.textContent = result.message || '❌ 帳號或密碼錯誤，請重新輸入';
+                }
+            } catch (err) {
+                errDiv.style.display = 'block';
+                errDiv.textContent = '網路錯誤，請稍後再試';
+            }
+
+            btn.disabled = false;
+            btn.textContent = '🔓 登入';
         }
 
         function handleLogout() {
